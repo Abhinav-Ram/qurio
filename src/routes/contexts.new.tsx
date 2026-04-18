@@ -34,12 +34,21 @@ function NewContextPage() {
       return;
     }
     setSaving(true);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setSaving(false);
+      toast.error("You must be signed in.");
+      return;
+    }
     const { data, error } = await supabase
       .from("interview_contexts")
       .insert({
         title: title.trim() || "Untitled Interview",
         context: context.trim(),
         hypothesis: hypothesis.trim(),
+        owner_id: user.id,
       })
       .select("id")
       .single();
