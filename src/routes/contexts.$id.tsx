@@ -391,10 +391,12 @@ function ContextWorkspace() {
 function QuestionCard({
   index,
   question,
+  locked,
   onSaved,
 }: {
   index: number;
   question: QuestionRow;
+  locked?: boolean;
   onSaved: (q: QuestionRow) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -445,7 +447,7 @@ function QuestionCard({
             <span className="text-sys-cyan">// {question.vector}</span>
           )}
         </div>
-        {!editing ? (
+        {locked ? null : !editing ? (
           <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
             <Edit2 className="size-3" /> Edit
           </Button>
