@@ -173,7 +173,12 @@ function ContextWorkspace() {
     if (!ctx) return;
     setGenerating(true);
     try {
-      const res = await generateQuestionsForContext({ data: { contextId: ctx.id } });
+      const { data: sess } = await supabase.auth.getSession();
+      const accessToken = sess.session?.access_token;
+      if (!accessToken) throw new Error("Not authenticated");
+      const res = await generateQuestionsForContext({
+        data: { contextId: ctx.id, accessToken },
+      });
       setQuestions(
         (res.questions as QuestionRow[]).map((r) => ({
           ...r,
