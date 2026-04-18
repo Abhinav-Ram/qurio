@@ -85,6 +85,41 @@ export type Database = {
           },
         ]
       }
+      interview_responses: {
+        Row: {
+          answers: Json
+          context_id: string
+          created_at: string
+          id: string
+          respondent_name: string
+          submitted_at: string
+        }
+        Insert: {
+          answers?: Json
+          context_id: string
+          created_at?: string
+          id?: string
+          respondent_name?: string
+          submitted_at?: string
+        }
+        Update: {
+          answers?: Json
+          context_id?: string
+          created_at?: string
+          id?: string
+          respondent_name?: string
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_responses_context_id_fkey"
+            columns: ["context_id"]
+            isOneToOne: false
+            referencedRelation: "interview_contexts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
