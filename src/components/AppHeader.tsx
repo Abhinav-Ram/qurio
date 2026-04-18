@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { logout } from "@/lib/auth";
+import { signOut } from "@/lib/auth";
+import { toast } from "sonner";
 
 export function AppHeader() {
   const navigate = useNavigate();
@@ -16,8 +17,9 @@ export function AppHeader() {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => {
-          logout();
+        onClick={async () => {
+          await signOut();
+          toast.success("Signed out");
           navigate({ to: "/login" });
         }}
       >
