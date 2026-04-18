@@ -332,6 +332,7 @@ function ContextWorkspace() {
                     key={q.id}
                     index={idx}
                     question={q}
+                    locked={!!shareSlug}
                     onSaved={(updated) =>
                       setQuestions((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
                     }
