@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           hypothesis: string
           id: string
+          owner_id: string
           share_slug: string | null
           title: string
           updated_at: string
@@ -31,6 +32,7 @@ export type Database = {
           created_at?: string
           hypothesis?: string
           id?: string
+          owner_id: string
           share_slug?: string | null
           title?: string
           updated_at?: string
@@ -41,6 +43,7 @@ export type Database = {
           created_at?: string
           hypothesis?: string
           id?: string
+          owner_id?: string
           share_slug?: string | null
           title?: string
           updated_at?: string
