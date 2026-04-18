@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { questionsPrompt } from "./prompts";
 
 function getSupabase() {
   const url =
@@ -45,21 +46,11 @@ export const generateQuestionsForContext = createServerFn({ method: "POST" })
     if (ctxErr) throw new Error(ctxErr.message);
     if (!ctx) throw new Error("Context not found");
 
-    const systemPrompt = `You are a senior qualitative research strategist designing interview question sets.
-
-Generate 5–8 structured, OPEN-ENDED interview questions grounded in the supplied context.
-Each question must:
-- Probe for behavior or evidence (not opinions or hypotheticals)
-- Avoid leading wording — never bias toward any hypothesis
-- Have a clear "vector" label (the dimension it investigates, max 3 words)
-- Include 2–3 short, contingent follow-up questions
-
-Return ONLY a tool call.`;
-
-    const userPrompt = `INTERVIEW CONTEXT:
-${ctx.context}
-
-${ctx.hypothesis ? `HYPOTHESIS UNDER TEST:\n${ctx.hypothesis}` : "NO EXPLICIT HYPOTHESIS — design exploratory questions."}`;
+    const systemPrompt = questionsPrompt.system;
+    const userPrompt = questionsPrompt.user({
+      context: ctx.context,
+      hypothesis: ctx.hypothesis,
+    });
 
     const body = {
       model: MODEL,
