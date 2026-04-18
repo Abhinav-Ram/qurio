@@ -128,7 +128,7 @@ function ContextWorkspace() {
 
   // Load responses when switching to the responses tab
   useEffect(() => {
-    if (tab !== "responses" || !ctx) return;
+    if ((tab !== "responses" && tab !== "analysis") || !ctx) return;
     let active = true;
     (async () => {
       const { data, error } = await supabase
