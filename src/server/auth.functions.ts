@@ -23,8 +23,8 @@ const CheckUsernameSchema = z.object({
 
 /**
  * Check whether a username exists. Used by forgot-password step 1.
- * Uses the SECURITY DEFINER RPC `lookup_email_by_identifier` so it
- * works even if service-role / authenticated context isn't available.
+ * Uses the SECURITY DEFINER RPC `lookup_email_by_identifier` which is
+ * callable by anon/authenticated, so it works even without service role.
  */
 export const checkUsernameExists = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => CheckUsernameSchema.parse(input))
@@ -41,43 +41,21 @@ export const checkUsernameExists = createServerFn({ method: "POST" })
 
 /**
  * Resets a user's password by username. No verification — prototype only.
- * Uses the SECURITY DEFINER RPC for the lookup, then admin API to update.
+ * Uses a SECURITY DEFINER RPC that performs both lookup and password update
+ * atomically server-side. Requires service-role key (RPC is restricted).
  */
 export const resetPasswordByUsername = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ResetSchema.parse(input))
   .handler(async ({ data }) => {
-    // Step 1: resolve username -> email via SECURITY DEFINER RPC
-    const { data: email, error: lookupErr } = await supabaseAdmin.rpc(
-      "lookup_email_by_identifier",
-      { identifier: data.username },
+    const { data: ok, error } = await supabaseAdmin.rpc(
+      "admin_reset_password_by_username",
+      { p_username: data.username, p_new_password: data.newPassword },
     );
-    if (lookupErr) {
-      return { ok: false as const, error: lookupErr.message };
+    if (error) {
+      return { ok: false as const, error: error.message };
     }
-    if (!email) {
+    if (!ok) {
       return { ok: false as const, error: "No account found with that username" };
-    }
-
-    // Step 2: find auth user by email (admin API requires service role)
-    const { data: list, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
-      page: 1,
-      perPage: 200,
-    });
-    if (listErr) {
-      return { ok: false as const, error: listErr.message };
-    }
-    const user = list.users.find((u) => u.email?.toLowerCase() === String(email).toLowerCase());
-    if (!user) {
-      return { ok: false as const, error: "No account found with that username" };
-    }
-
-    // Step 3: update password
-    const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
-      user.id,
-      { password: data.newPassword },
-    );
-    if (updateErr) {
-      return { ok: false as const, error: updateErr.message };
     }
     return { ok: true as const, error: null };
   });
