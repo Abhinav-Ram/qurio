@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ContextsNewRouteImport } from './routes/contexts.new'
+import { Route as ContextsIdRouteImport } from './routes/contexts.$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -34,17 +35,24 @@ const ContextsNewRoute = ContextsNewRouteImport.update({
   path: '/contexts/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContextsIdRoute = ContextsIdRouteImport.update({
+  id: '/contexts/$id',
+  path: '/contexts/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/contexts/$id': typeof ContextsIdRoute
   '/contexts/new': typeof ContextsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/contexts/$id': typeof ContextsIdRoute
   '/contexts/new': typeof ContextsNewRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,28 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/contexts/$id': typeof ContextsIdRoute
   '/contexts/new': typeof ContextsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/login' | '/contexts/new'
+  fullPaths: '/' | '/dashboard' | '/login' | '/contexts/$id' | '/contexts/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/contexts/new'
-  id: '__root__' | '/' | '/dashboard' | '/login' | '/contexts/new'
+  to: '/' | '/dashboard' | '/login' | '/contexts/$id' | '/contexts/new'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/contexts/$id'
+    | '/contexts/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  ContextsIdRoute: typeof ContextsIdRoute
   ContextsNewRoute: typeof ContextsNewRoute
 }
 
@@ -99,6 +115,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContextsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contexts/$id': {
+      id: '/contexts/$id'
+      path: '/contexts/$id'
+      fullPath: '/contexts/$id'
+      preLoaderRoute: typeof ContextsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -106,8 +129,18 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  ContextsIdRoute: ContextsIdRoute,
   ContextsNewRoute: ContextsNewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

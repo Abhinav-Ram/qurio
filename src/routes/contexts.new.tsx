@@ -34,18 +34,26 @@ function NewContextPage() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("interview_contexts").insert({
-      title: title.trim() || "Untitled Interview",
-      context: context.trim(),
-      hypothesis: hypothesis.trim(),
-    });
+    const { data, error } = await supabase
+      .from("interview_contexts")
+      .insert({
+        title: title.trim() || "Untitled Interview",
+        context: context.trim(),
+        hypothesis: hypothesis.trim(),
+      })
+      .select("id")
+      .single();
     setSaving(false);
-    if (error) {
-      toast.error(error.message);
+    if (error || !data) {
+      toast.error(error?.message ?? "Could not save context");
       return;
     }
     toast.success("Context saved");
-    navigate({ to: "/dashboard" });
+    navigate({
+      to: "/contexts/$id",
+      params: { id: data.id },
+      search: { autogen: "1" },
+    });
   };
 
   return (

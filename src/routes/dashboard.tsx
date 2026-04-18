@@ -85,22 +85,23 @@ function DashboardPage() {
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {rows.map((r) => (
-            <li
-              key={r.id}
-              className="bg-card border border-border rounded-lg p-4 hover:border-sys-cyan/60 transition-colors"
-            >
-              <p className="font-mono text-[10px] uppercase tracking-widest text-sys-muted">
-                {new Date(r.created_at).toLocaleString()}
-              </p>
-              <h3 className="mt-1 font-semibold truncate">{r.title}</h3>
-              <p className="mt-2 text-sm text-sys-muted line-clamp-2">
-                {r.context || "No context provided."}
-              </p>
-              {r.hypothesis ? (
-                <p className="mt-2 text-xs text-sys-cyan/80 line-clamp-2">
-                  H: {r.hypothesis}
+            <li key={r.id}>
+              <Link
+                to="/contexts/$id"
+                params={{ id: r.id }}
+                className="block bg-card border border-border rounded-lg p-4 hover:border-sys-cyan/60 transition-colors"
+              >
+                <p className="font-mono text-[10px] uppercase tracking-widest text-sys-muted">
+                  {new Date(r.created_at).toLocaleString()}
                 </p>
-              ) : null}
+                <h3 className="mt-1 font-semibold truncate">{r.title}</h3>
+                <p className="mt-2 text-sm text-sys-muted line-clamp-2">
+                  {r.context || "No context provided."}
+                </p>
+                {r.hypothesis ? (
+                  <p className="mt-2 text-xs text-sys-cyan/80 line-clamp-2">H: {r.hypothesis}</p>
+                ) : null}
+              </Link>
             </li>
           ))}
         </ul>
