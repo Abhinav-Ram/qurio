@@ -5,12 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { isLoggedIn } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
+import { resetPasswordByUsername } from "@/server/auth.functions";
 
 export const Route = createFileRoute("/forgot-password")({
   beforeLoad: () => {
@@ -22,94 +27,59 @@ export const Route = createFileRoute("/forgot-password")({
   }),
 });
 
+const USERNAME_RE = /^[A-Za-z0-9_.]{3,32}$/;
+
 function ForgotPasswordPage() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<"email" | "otp" | "newPassword">("email");
+  const [step, setStep] = useState<"username" | "newPassword">("username");
+  const [username, setUsername] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  async function sendCode(e: FormEvent) {
-    e.preventDefault();
-    const em = email.trim().toLowerCase();
-    if (!em) return;
-    setBusy(true);
-    try {
-      // resetPasswordForEmail with no redirect URL forces an email-OTP flow,
-      // which we then verify with verifyOtp({ type: 'recovery' }).
-      const { error } = await supabase.auth.resetPasswordForEmail(em);
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
-      toast.success("If that email exists, a code has been sent");
-      setStep("otp");
-    } finally {
-      setBusy(false);
-    }
-  }
+  const pwRules = [
+    { label: "At least 8 characters", ok: password.length >= 8 },
+    { label: "One uppercase letter (A–Z)", ok: /[A-Z]/.test(password) },
+    { label: "One lowercase letter (a–z)", ok: /[a-z]/.test(password) },
+    { label: "One number (0–9)", ok: /[0-9]/.test(password) },
+    { label: "One symbol (!@#$…)", ok: /[^A-Za-z0-9]/.test(password) },
+    {
+      label: "Matches confirmation",
+      ok: password.length > 0 && password === confirmPassword,
+    },
+  ];
+  const allPwOk = pwRules.every((r) => r.ok);
 
-  async function verifyCode(e: FormEvent) {
+  function onSubmitUsername(e: FormEvent) {
     e.preventDefault();
-    if (otp.length !== 6) {
-      toast.error("Enter the 6-digit code");
+    const u = username.trim();
+    if (!USERNAME_RE.test(u)) {
+      toast.error("Enter a valid username");
       return;
     }
-    setBusy(true);
+    setUsername(u);
+    setConfirmOpen(true);
+  }
+
+  async function onSubmitNewPassword(e: FormEvent) {
+    e.preventDefault();
+    if (!allPwOk) {
+      toast.error("Password does not meet all requirements");
+      return;
+    }
+    setSubmitting(true);
     try {
-      const { error } = await supabase.auth.verifyOtp({
-        email: email.trim().toLowerCase(),
-        token: otp,
-        type: "recovery",
+      await resetPasswordByUsername({
+        data: { username, newPassword: password },
       });
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
-      // verifyOtp(recovery) signs the user in temporarily so updateUser works.
-      setStep("newPassword");
+      toast.success("Password updated — please sign in");
+      navigate({ to: "/login" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to reset password");
     } finally {
-      setBusy(false);
-    }
-  }
-
-  async function setPassword(e: FormEvent) {
-    e.preventDefault();
-    if (newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
-    setBusy(true);
-    try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
-      toast.success("Password updated — you're signed in");
-      navigate({ to: "/dashboard" });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function resendCode() {
-    setBusy(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        email.trim().toLowerCase(),
-      );
-      if (error) toast.error(error.message);
-      else toast.success("New code sent");
-    } finally {
-      setBusy(false);
+      setSubmitting(false);
     }
   }
 
@@ -118,106 +88,62 @@ function ForgotPasswordPage() {
       <div className="w-full max-w-sm bg-card border border-border rounded-lg p-6 space-y-5">
         <div className="space-y-1">
           <p className="font-mono text-[11px] tracking-widest text-sys-cyan uppercase">
-            Account recovery
+            Interviewer console
           </p>
           <h1 className="text-xl font-semibold">
-            {step === "email"
-              ? "Reset your password"
-              : step === "otp"
-                ? "Enter the code"
-                : "Choose a new password"}
+            {step === "username" ? "Reset password" : "Set new password"}
           </h1>
           <p className="text-xs text-sys-muted">
-            {step === "email"
-              ? "We'll email you a 6-digit code to verify it's you."
-              : step === "otp"
-                ? `Code sent to ${email}.`
-                : "Pick something you'll remember."}
+            {step === "username"
+              ? "Enter your username to reset your password."
+              : `Setting a new password for ${username}.`}
           </p>
         </div>
 
-        {step === "email" && (
-          <form onSubmit={sendCode} className="space-y-4">
+        {step === "username" ? (
+          <form onSubmit={onSubmitUsername} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs uppercase tracking-wider">
-                Email
+              <Label htmlFor="username" className="text-xs uppercase tracking-wider">
+                Username
               </Label>
               <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
                 autoFocus
                 required
               />
             </div>
-            <Button type="submit" disabled={busy} className="w-full">
-              {busy ? "Sending…" : "Send code"}
+
+            <Button type="submit" className="w-full">
+              Continue
             </Button>
+
             <p className="text-xs text-center text-sys-muted">
-              Remembered it?{" "}
               <Link to="/login" className="text-sys-cyan hover:underline">
-                Back to sign in
+                ← Back to sign in
               </Link>
             </p>
           </form>
-        )}
-
-        {step === "otp" && (
-          <form onSubmit={verifyCode} className="space-y-4">
+        ) : (
+          <form onSubmit={onSubmitNewPassword} className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-wider">
-                6-digit code
-              </Label>
-              <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-                <InputOTPGroup>
-                  {[0, 1, 2, 3, 4, 5].map((i) => (
-                    <InputOTPSlot key={i} index={i} />
-                  ))}
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
-            <Button type="submit" disabled={busy} className="w-full">
-              {busy ? "Verifying…" : "Verify code"}
-            </Button>
-            <div className="flex items-center justify-between text-xs">
-              <button
-                type="button"
-                onClick={() => setStep("email")}
-                className="text-sys-muted hover:text-sys-text"
-              >
-                ← Use a different email
-              </button>
-              <button
-                type="button"
-                onClick={resendCode}
-                disabled={busy}
-                className="text-sys-cyan hover:underline disabled:opacity-50"
-              >
-                Resend code
-              </button>
-            </div>
-          </form>
-        )}
-
-        {step === "newPassword" && (
-          <form onSubmit={setPassword} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="newPassword" className="text-xs uppercase tracking-wider">
+              <Label htmlFor="password" className="text-xs uppercase tracking-wider">
                 New password
               </Label>
               <Input
-                id="newPassword"
+                id="password"
                 type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
+                autoFocus
                 required
                 minLength={8}
-                autoFocus
               />
             </div>
+
             <div className="space-y-2">
               <Label
                 htmlFor="confirmPassword"
@@ -235,12 +161,58 @@ function ForgotPasswordPage() {
                 minLength={8}
               />
             </div>
-            <Button type="submit" disabled={busy} className="w-full">
-              {busy ? "Saving…" : "Update password"}
+
+            <ul className="space-y-1 text-xs">
+              {pwRules.map((r) => (
+                <li
+                  key={r.label}
+                  className={r.ok ? "text-sys-cyan" : "text-sys-muted"}
+                >
+                  <span className="inline-block w-4">{r.ok ? "✓" : "○"}</span>
+                  {r.label}
+                </li>
+              ))}
+            </ul>
+
+            <Button
+              type="submit"
+              disabled={submitting || !allPwOk}
+              className="w-full"
+            >
+              {submitting ? "Updating…" : "Update password"}
             </Button>
+
+            <p className="text-xs text-center text-sys-muted">
+              <Link to="/login" className="text-sys-cyan hover:underline">
+                ← Back to sign in
+              </Link>
+            </p>
           </form>
         )}
       </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset password for {username}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You'll be taken to a page to set a new password. The old password will
+              stop working immediately.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmOpen(false);
+                setStep("newPassword");
+              }}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
