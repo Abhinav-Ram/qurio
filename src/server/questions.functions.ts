@@ -106,7 +106,7 @@ export const generateQuestionsForContext = createServerFn({ method: "POST" })
     };
 
     // Replace existing questions for this context
-    await getSupabase().from("interview_questions").delete().eq("context_id", data.contextId);
+    await sb.from("interview_questions").delete().eq("context_id", data.contextId);
 
     const rows = parsed.questions.map((q, i) => ({
       context_id: data.contextId,
@@ -116,7 +116,7 @@ export const generateQuestionsForContext = createServerFn({ method: "POST" })
       position: i,
     }));
 
-    const { data: inserted, error: insErr } = await getSupabase()
+    const { data: inserted, error: insErr } = await sb
       .from("interview_questions")
       .insert(rows)
       .select("id,vector,text,follow_ups,position")
