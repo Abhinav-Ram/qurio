@@ -226,7 +226,21 @@ function RegisterPage() {
               />
             </div>
 
-            <Button type="submit" disabled={submitting} className="w-full">
+            <ul className="space-y-1 text-xs">
+              {pwRules.map((r) => (
+                <li
+                  key={r.label}
+                  className={
+                    r.ok ? "text-sys-cyan" : "text-sys-muted"
+                  }
+                >
+                  <span className="inline-block w-4">{r.ok ? "✓" : "○"}</span>
+                  {r.label}
+                </li>
+              ))}
+            </ul>
+
+            <Button type="submit" disabled={submitting || !allPwOk} className="w-full">
               {submitting ? "Creating…" : "Create account"}
             </Button>
 
