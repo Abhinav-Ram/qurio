@@ -71,9 +71,13 @@ function ForgotPasswordPage() {
     }
     setSubmitting(true);
     try {
-      await resetPasswordByUsername({
+      const res = await resetPasswordByUsername({
         data: { username, newPassword: password },
       });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
       toast.success("Password updated — please sign in");
       navigate({ to: "/login" });
     } catch (err) {
