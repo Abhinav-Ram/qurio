@@ -17,40 +17,29 @@ export const Route = createFileRoute("/login")({
   }),
 });
 
+const synthEmail = (u: string) => `${u.toLowerCase()}@users.invalid`;
+
 function LoginPage() {
   const navigate = useNavigate();
-  const [identifier, setIdentifier] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  async function resolveEmail(input: string): Promise<string | null> {
-    const trimmed = input.trim();
-    if (!trimmed) return null;
-    // If it already looks like an email, use it directly.
-    if (trimmed.includes("@")) return trimmed.toLowerCase();
-    // Otherwise look it up via the username.
-    const { data, error } = await supabase.rpc("lookup_email_by_identifier", {
-      identifier: trimmed,
-    });
-    if (error) {
-      console.error("lookup_email_by_identifier failed", error);
-      return null;
-    }
-    return (data as string | null) ?? null;
-  }
-
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    const u = username.trim();
+    if (!u) {
+      toast.error("Enter your username");
+      return;
+    }
     setSubmitting(true);
     try {
-      const email = await resolveEmail(identifier);
-      if (!email) {
-        toast.error("No account found with that username or email");
-        return;
-      }
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: synthEmail(u),
+        password,
+      });
       if (error) {
-        toast.error(error.message);
+        toast.error("Invalid username or password");
         return;
       }
       toast.success("Signed in");
@@ -71,17 +60,16 @@ function LoginPage() {
             Interviewer console
           </p>
           <h1 className="text-xl font-semibold">Sign in</h1>
-          <p className="text-xs text-sys-muted">Use your username or email.</p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="identifier" className="text-xs uppercase tracking-wider">
-            Username or email
+          <Label htmlFor="username" className="text-xs uppercase tracking-wider">
+            Username
           </Label>
           <Input
-            id="identifier"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"
             autoFocus
             required
