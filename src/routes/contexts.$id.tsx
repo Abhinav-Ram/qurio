@@ -120,6 +120,38 @@ function ContextWorkspace() {
     };
   }, [id, navigate]);
 
+  // Load responses when switching to the responses tab
+  useEffect(() => {
+    if (tab !== "responses" || !ctx) return;
+    let active = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("interview_responses")
+        .select("id,respondent_name,submitted_at,answers")
+        .eq("context_id", ctx.id)
+        .order("submitted_at", { ascending: false });
+      if (!active) return;
+      if (error) {
+        toast.error(error.message);
+        setResponses([]);
+        return;
+      }
+      setResponses(
+        (data ?? []).map((r) => ({
+          id: r.id,
+          respondent_name: r.respondent_name ?? "",
+          submitted_at: r.submitted_at,
+          answers: Array.isArray(r.answers)
+            ? (r.answers as { questionId: string; answer: string }[])
+            : [],
+        })),
+      );
+    })();
+    return () => {
+      active = false;
+    };
+  }, [tab, ctx]);
+
   // Auto-generate if redirected here with ?autogen=1 and no questions yet
   useEffect(() => {
     if (loading || generating) return;
