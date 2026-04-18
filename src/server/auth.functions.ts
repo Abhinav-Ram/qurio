@@ -26,10 +26,10 @@ export const resetPasswordByUsername = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (profileErr) {
-      throw new Error(profileErr.message);
+      return { ok: false as const, error: profileErr.message };
     }
     if (!profile) {
-      throw new Error("No account found with that username");
+      return { ok: false as const, error: "No account found with that username" };
     }
 
     const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
@@ -37,7 +37,7 @@ export const resetPasswordByUsername = createServerFn({ method: "POST" })
       { password: data.newPassword },
     );
     if (updateErr) {
-      throw new Error(updateErr.message);
+      return { ok: false as const, error: updateErr.message };
     }
     return { ok: true as const };
   });
