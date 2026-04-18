@@ -63,12 +63,10 @@ type ResponseRow = {
 function ContextWorkspace() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const search = Route.useSearch() as { autogen?: string };
 
   const [ctx, setCtx] = useState<ContextRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
-  const [generating, setGenerating] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareSlug, setShareSlug] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
@@ -148,35 +146,7 @@ function ContextWorkspace() {
     };
   }, [tab, ctx]);
 
-  // Auto-generate if redirected here with ?autogen=1 and no questions yet
-  useEffect(() => {
-    if (loading || generating) return;
-    if (search.autogen && questions.length === 0 && ctx) {
-      void runGenerate();
-      // strip the search param so refresh doesn't regenerate
-      navigate({ to: "/contexts/$id", params: { id }, search: {}, replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, ctx, search.autogen]);
 
-  async function runGenerate() {
-    if (!ctx) return;
-    setGenerating(true);
-    try {
-      const res = await generateQuestionsForContext({ data: { contextId: ctx.id } });
-      setQuestions(
-        (res.questions as QuestionRow[]).map((r) => ({
-          ...r,
-          follow_ups: Array.isArray(r.follow_ups) ? (r.follow_ups as string[]) : [],
-        })),
-      );
-      toast.success(`Generated ${res.questions.length} questions`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Generation failed");
-    } finally {
-      setGenerating(false);
-    }
-  }
 
   async function openShare() {
     if (!ctx) return;
@@ -252,23 +222,17 @@ function ContextWorkspace() {
               </h1>
               <p className="text-sm text-sys-muted">
                 {tab === "questions"
-                  ? "Review the AI-generated probes, edit anything, then share with your interviewee."
+                  ? "The locked probe set sent to your interviewees. Share the link to start collecting responses."
                   : tab === "responses"
                     ? "Each interviewee's answers, listed in the order the questions were asked."
                     : "Evidence-grounded synthesis of all collected responses."}
               </p>
             </div>
             <div className="flex gap-2">
-              {tab === "questions" && questions.length > 0 && (
-                <Button variant="outline" onClick={runGenerate} disabled={generating}>
-                  <Sparkles className="size-4" />
-                  Regenerate
-                </Button>
-              )}
               {tab === "questions" && (
-                <Button onClick={openShare} disabled={questions.length === 0 || generating}>
+                <Button onClick={openShare} disabled={questions.length === 0}>
                   <Share2 className="size-4" />
-                  Save & share
+                  Share link
                 </Button>
               )}
             </div>
@@ -300,32 +264,15 @@ function ContextWorkspace() {
           </div>
 
           {tab === "questions" ? (
-            generating ? (
-              <div className="border border-dashed border-border rounded-lg p-12 text-center">
-                <Loader2 className="size-6 mx-auto animate-spin text-sys-cyan mb-3" />
-                <p className="text-sm text-sys-muted font-mono uppercase tracking-widest">
-                  Drafting probe sequence…
-                </p>
-              </div>
-            ) : questions.length === 0 ? (
+            questions.length === 0 ? (
               <div className="border border-dashed border-border rounded-lg p-10 text-center">
-                <p className="text-sm text-sys-muted mb-4">No questions yet.</p>
-                <Button onClick={runGenerate}>
-                  <Sparkles className="size-4" />
-                  Generate questions
-                </Button>
+                <Loader2 className="size-6 mx-auto animate-spin text-sys-cyan mb-3" />
+                <p className="text-sm text-sys-muted">No questions on this interview.</p>
               </div>
             ) : (
               <ul className="space-y-4">
                 {questions.map((q, idx) => (
-                  <QuestionCard
-                    key={q.id}
-                    index={idx}
-                    question={q}
-                    onSaved={(updated) =>
-                      setQuestions((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
-                    }
-                  />
+                  <QuestionCard key={q.id} index={idx} question={q} />
                 ))}
               </ul>
             )
