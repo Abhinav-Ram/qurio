@@ -12,32 +12,72 @@ const ResetSchema = z.object({
   newPassword: z.string().min(8).max(128),
 });
 
+const CheckUsernameSchema = z.object({
+  username: z
+    .string()
+    .trim()
+    .min(3)
+    .max(32)
+    .regex(/^[A-Za-z0-9_.]+$/),
+});
+
+/**
+ * Check whether a username exists. Used by forgot-password step 1.
+ * Uses the SECURITY DEFINER RPC `lookup_email_by_identifier` so it
+ * works even if service-role / authenticated context isn't available.
+ */
+export const checkUsernameExists = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => CheckUsernameSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { data: email, error } = await supabaseAdmin.rpc(
+      "lookup_email_by_identifier",
+      { identifier: data.username },
+    );
+    if (error) {
+      return { exists: false as const, error: error.message };
+    }
+    return { exists: Boolean(email), error: null };
+  });
+
 /**
  * Resets a user's password by username. No verification — prototype only.
- * Looks up the user_id via the profiles table, then updates the auth user.
+ * Uses the SECURITY DEFINER RPC for the lookup, then admin API to update.
  */
 export const resetPasswordByUsername = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ResetSchema.parse(input))
   .handler(async ({ data }) => {
-    const { data: profile, error: profileErr } = await supabaseAdmin
-      .from("profiles")
-      .select("user_id")
-      .eq("username", data.username)
-      .maybeSingle();
-
-    if (profileErr) {
-      return { ok: false as const, error: profileErr.message };
+    // Step 1: resolve username -> email via SECURITY DEFINER RPC
+    const { data: email, error: lookupErr } = await supabaseAdmin.rpc(
+      "lookup_email_by_identifier",
+      { identifier: data.username },
+    );
+    if (lookupErr) {
+      return { ok: false as const, error: lookupErr.message };
     }
-    if (!profile) {
+    if (!email) {
       return { ok: false as const, error: "No account found with that username" };
     }
 
+    // Step 2: find auth user by email (admin API requires service role)
+    const { data: list, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 200,
+    });
+    if (listErr) {
+      return { ok: false as const, error: listErr.message };
+    }
+    const user = list.users.find((u) => u.email?.toLowerCase() === String(email).toLowerCase());
+    if (!user) {
+      return { ok: false as const, error: "No account found with that username" };
+    }
+
+    // Step 3: update password
     const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
-      profile.user_id,
+      user.id,
       { password: data.newPassword },
     );
     if (updateErr) {
       return { ok: false as const, error: updateErr.message };
     }
-    return { ok: true as const };
+    return { ok: true as const, error: null };
   });
