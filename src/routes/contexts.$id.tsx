@@ -82,8 +82,9 @@ function ContextWorkspace() {
   const [shareOpen, setShareOpen] = useState(false);
   const [shareSlug, setShareSlug] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
-  const [tab, setTab] = useState<"questions" | "responses">("questions");
+  const [tab, setTab] = useState<"questions" | "responses" | "analysis">("questions");
   const [responses, setResponses] = useState<ResponseRow[] | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisReport | null>(null);
 
   // Load context + existing questions
   useEffect(() => {
@@ -93,7 +94,7 @@ function ContextWorkspace() {
       const [{ data: ctxRow, error: ctxErr }, { data: qRows, error: qErr }] = await Promise.all([
         supabase
           .from("interview_contexts")
-          .select("id,title,context,hypothesis,share_slug")
+          .select("id,title,context,hypothesis,share_slug,analysis")
           .eq("id", id)
           .maybeSingle(),
         supabase
@@ -108,8 +109,9 @@ function ContextWorkspace() {
         navigate({ to: "/dashboard" });
         return;
       }
-      setCtx(ctxRow as ContextRow);
+      setCtx(ctxRow as unknown as ContextRow);
       setShareSlug((ctxRow as ContextRow).share_slug);
+      setAnalysis(((ctxRow as unknown as ContextRow).analysis as AnalysisReport | null) ?? null);
       if (qErr) toast.error(qErr.message);
       setQuestions(
         (qRows ?? []).map((r) => ({
