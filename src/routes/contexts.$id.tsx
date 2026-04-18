@@ -254,12 +254,18 @@ function ContextWorkspace() {
           <div className="flex items-end justify-between gap-3 flex-wrap mb-4">
             <div>
               <h1 className="text-2xl font-semibold">
-                {tab === "questions" ? "Interview questions" : "Responses"}
+                {tab === "questions"
+                  ? "Interview questions"
+                  : tab === "responses"
+                    ? "Responses"
+                    : "Analysis"}
               </h1>
               <p className="text-sm text-sys-muted">
                 {tab === "questions"
                   ? "Review the AI-generated probes, edit anything, then share with your interviewee."
-                  : "Each interviewee's answers, listed in the order the questions were asked."}
+                  : tab === "responses"
+                    ? "Each interviewee's answers, listed in the order the questions were asked."
+                    : "Evidence-grounded synthesis of all collected responses."}
               </p>
             </div>
             <div className="flex gap-2">
@@ -294,6 +300,13 @@ function ContextWorkspace() {
               label="Responses"
               count={responses?.length ?? null}
             />
+            <TabButton
+              active={tab === "analysis"}
+              onClick={() => setTab("analysis")}
+              icon={<FlaskConical className="size-3.5" />}
+              label="Analysis"
+              count={analysis ? 1 : null}
+            />
           </div>
 
           {tab === "questions" ? (
@@ -326,8 +339,15 @@ function ContextWorkspace() {
                 ))}
               </ul>
             )
-          ) : (
+          ) : tab === "responses" ? (
             <ResponsesPanel responses={responses} questions={questions} />
+          ) : (
+            <AnalysisPanel
+              contextId={ctx.id}
+              initial={analysis}
+              hasResponses={(responses?.length ?? 0) > 0}
+              onGenerated={setAnalysis}
+            />
           )}
         </main>
       </div>
