@@ -43,9 +43,15 @@ function DashboardPage() {
   useEffect(() => {
     let active = true;
     (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        if (active) setRows([]);
+        return;
+      }
       const { data, error } = await supabase
         .from("interview_contexts")
         .select("id,title,context,hypothesis,created_at")
+        .eq("owner_id", user.id)
         .order("created_at", { ascending: false });
       if (!active) return;
       if (error) {
