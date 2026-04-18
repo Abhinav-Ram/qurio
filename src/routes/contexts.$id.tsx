@@ -503,3 +503,119 @@ function QuestionCard({
     </li>
   );
 }
+
+function TabButton({
+  active,
+  onClick,
+  icon,
+  label,
+  count,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  count: number | null;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 px-3 py-2 text-xs font-mono uppercase tracking-widest border-b-2 transition-colors ${
+        active
+          ? "border-sys-cyan text-sys-text"
+          : "border-transparent text-sys-muted hover:text-sys-text"
+      }`}
+    >
+      {icon}
+      {label}
+      {count !== null && (
+        <span className="text-[10px] text-sys-muted">({count})</span>
+      )}
+    </button>
+  );
+}
+
+function ResponsesPanel({
+  responses,
+  questions,
+}: {
+  responses: ResponseRow[] | null;
+  questions: QuestionRow[];
+}) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const questionMap = useMemo(() => {
+    const m = new Map<string, { text: string; index: number }>();
+    questions.forEach((q, i) => m.set(q.id, { text: q.text, index: i }));
+    return m;
+  }, [questions]);
+
+  if (responses === null) {
+    return (
+      <div className="text-sm text-sys-muted font-mono py-8 text-center">
+        Loading responses…
+      </div>
+    );
+  }
+  if (responses.length === 0) {
+    return (
+      <div className="border border-dashed border-border rounded-lg p-10 text-center">
+        <Inbox className="size-8 mx-auto text-sys-muted mb-3" />
+        <p className="text-sm text-sys-muted">
+          No responses yet. Share your link to start collecting answers.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="space-y-3">
+      {responses.map((r) => {
+        const open = openId === r.id;
+        return (
+          <li key={r.id} className="bg-card border border-border rounded-lg overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setOpenId(open ? null : r.id)}
+              className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-card/60 transition-colors"
+            >
+              <div className="min-w-0">
+                <p className="font-semibold truncate">
+                  {r.respondent_name || "Anonymous"}
+                </p>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-sys-muted">
+                  {new Date(r.submitted_at).toLocaleString()} · {r.answers.length} answers
+                </p>
+              </div>
+              <span className="text-xs text-sys-cyan font-mono">
+                {open ? "− Hide" : "+ View"}
+              </span>
+            </button>
+            {open && (
+              <div className="border-t border-border p-4 space-y-4">
+                {r.answers.map((a, i) => {
+                  const q = questionMap.get(a.questionId);
+                  return (
+                    <div key={i}>
+                      <p className="font-mono text-[10px] uppercase tracking-widest text-sys-muted mb-1">
+                        Q.{String((q?.index ?? i) + 1).padStart(2, "0")}
+                      </p>
+                      <p className="text-sm font-medium mb-1">
+                        {q?.text ?? "(question removed)"}
+                      </p>
+                      <p className="text-sm text-sys-muted whitespace-pre-wrap">
+                        {a.answer.trim() || (
+                          <span className="italic text-sys-amber">— skipped —</span>
+                        )}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
