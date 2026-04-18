@@ -1,31 +1,45 @@
 import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { questionsPrompt, AI_GATEWAY_URL, getAIApiKey } from "./prompts";
 
 function getSupabase() {
   return supabaseAdmin;
 }
 
+function getUserSupabase(accessToken: string) {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const key =
+    process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) throw new Error("Supabase env not configured");
+  return createClient<Database>(url, key, {
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
 interface GenerateInput {
   contextId: string;
+  accessToken: string;
 }
 
 export const generateQuestionsForContext = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((data: GenerateInput) => {
     if (!data?.contextId || typeof data.contextId !== "string") {
       throw new Error("contextId required");
     }
-    return { contextId: data.contextId };
+    if (!data?.accessToken || typeof data.accessToken !== "string") {
+      throw new Error("Not authenticated");
+    }
+    return { contextId: data.contextId, accessToken: data.accessToken };
   })
-  .handler(async ({ data, context }) => {
-    const sb = context.supabase;
+  .handler(async ({ data }) => {
+    const sb = getUserSupabase(data.accessToken);
     const { data: ctx, error: ctxErr } = await sb
       .from("interview_contexts")
       .select("id,context,hypothesis,owner_id")
       .eq("id", data.contextId)
-      .eq("owner_id", context.userId)
       .maybeSingle();
     if (ctxErr) throw new Error(ctxErr.message);
     if (!ctx) throw new Error("Context not found");
