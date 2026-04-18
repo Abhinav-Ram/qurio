@@ -11,6 +11,7 @@ import {
   Loader2,
   Inbox,
   ListChecks,
+  FlaskConical,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/AppHeader";
@@ -32,6 +33,8 @@ import {
   updateQuestion,
   ensureShareSlug,
 } from "@/server/questions.functions";
+import type { AnalysisReport } from "@/server/analysis.functions";
+import { AnalysisPanel } from "@/components/AnalysisPanel";
 
 export const Route = createFileRoute("/contexts/$id")({
   beforeLoad: () => {
@@ -49,6 +52,7 @@ type ContextRow = {
   context: string;
   hypothesis: string;
   share_slug: string | null;
+  analysis: AnalysisReport | null;
 };
 
 type QuestionRow = {
@@ -78,8 +82,9 @@ function ContextWorkspace() {
   const [shareOpen, setShareOpen] = useState(false);
   const [shareSlug, setShareSlug] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
-  const [tab, setTab] = useState<"questions" | "responses">("questions");
+  const [tab, setTab] = useState<"questions" | "responses" | "analysis">("questions");
   const [responses, setResponses] = useState<ResponseRow[] | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisReport | null>(null);
 
   // Load context + existing questions
   useEffect(() => {
@@ -89,7 +94,7 @@ function ContextWorkspace() {
       const [{ data: ctxRow, error: ctxErr }, { data: qRows, error: qErr }] = await Promise.all([
         supabase
           .from("interview_contexts")
-          .select("id,title,context,hypothesis,share_slug")
+          .select("id,title,context,hypothesis,share_slug,analysis")
           .eq("id", id)
           .maybeSingle(),
         supabase
@@ -104,8 +109,9 @@ function ContextWorkspace() {
         navigate({ to: "/dashboard" });
         return;
       }
-      setCtx(ctxRow as ContextRow);
+      setCtx(ctxRow as unknown as ContextRow);
       setShareSlug((ctxRow as ContextRow).share_slug);
+      setAnalysis(((ctxRow as unknown as ContextRow).analysis as AnalysisReport | null) ?? null);
       if (qErr) toast.error(qErr.message);
       setQuestions(
         (qRows ?? []).map((r) => ({
@@ -122,7 +128,7 @@ function ContextWorkspace() {
 
   // Load responses when switching to the responses tab
   useEffect(() => {
-    if (tab !== "responses" || !ctx) return;
+    if ((tab !== "responses" && tab !== "analysis") || !ctx) return;
     let active = true;
     (async () => {
       const { data, error } = await supabase
@@ -248,12 +254,18 @@ function ContextWorkspace() {
           <div className="flex items-end justify-between gap-3 flex-wrap mb-4">
             <div>
               <h1 className="text-2xl font-semibold">
-                {tab === "questions" ? "Interview questions" : "Responses"}
+                {tab === "questions"
+                  ? "Interview questions"
+                  : tab === "responses"
+                    ? "Responses"
+                    : "Analysis"}
               </h1>
               <p className="text-sm text-sys-muted">
                 {tab === "questions"
                   ? "Review the AI-generated probes, edit anything, then share with your interviewee."
-                  : "Each interviewee's answers, listed in the order the questions were asked."}
+                  : tab === "responses"
+                    ? "Each interviewee's answers, listed in the order the questions were asked."
+                    : "Evidence-grounded synthesis of all collected responses."}
               </p>
             </div>
             <div className="flex gap-2">
@@ -288,6 +300,13 @@ function ContextWorkspace() {
               label="Responses"
               count={responses?.length ?? null}
             />
+            <TabButton
+              active={tab === "analysis"}
+              onClick={() => setTab("analysis")}
+              icon={<FlaskConical className="size-3.5" />}
+              label="Analysis"
+              count={analysis ? 1 : null}
+            />
           </div>
 
           {tab === "questions" ? (
@@ -320,8 +339,15 @@ function ContextWorkspace() {
                 ))}
               </ul>
             )
-          ) : (
+          ) : tab === "responses" ? (
             <ResponsesPanel responses={responses} questions={questions} />
+          ) : (
+            <AnalysisPanel
+              contextId={ctx.id}
+              initial={analysis}
+              hasResponses={(responses?.length ?? 0) > 0}
+              onGenerated={setAnalysis}
+            />
           )}
         </main>
       </div>

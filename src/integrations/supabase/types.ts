@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       interview_contexts: {
         Row: {
+          analysis: Json | null
           context: string
           created_at: string
           hypothesis: string
@@ -25,6 +26,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          analysis?: Json | null
           context?: string
           created_at?: string
           hypothesis?: string
@@ -34,6 +36,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          analysis?: Json | null
           context?: string
           created_at?: string
           hypothesis?: string

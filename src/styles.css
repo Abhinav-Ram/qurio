@@ -108,3 +108,62 @@
   }
 }
 
+/* Markdown report styling */
+.prose-analysis {
+  color: var(--color-sys-text);
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+.prose-analysis h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  letter-spacing: 0.02em;
+}
+.prose-analysis h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-sys-cyan);
+  font-family: ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.prose-analysis p { margin: 0.5rem 0; }
+.prose-analysis strong { color: var(--color-sys-text); }
+.prose-analysis hr {
+  border: none;
+  border-top: 1px dashed var(--color-border);
+  margin: 1.25rem 0;
+}
+.prose-analysis blockquote {
+  border-left: 2px solid var(--color-sys-cyan);
+  padding: 0.25rem 0.75rem;
+  color: var(--color-sys-text);
+  background: color-mix(in oklab, var(--color-sys-cyan) 6%, transparent);
+  margin: 0.5rem 0;
+  font-style: italic;
+}
+.prose-analysis pre {
+  background: var(--color-sys-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  font-family: ui-monospace, monospace;
+}
+.prose-analysis code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+}
+.prose-analysis :not(pre) > code {
+  background: color-mix(in oklab, var(--color-sys-cyan) 10%, transparent);
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.25rem;
+}
+.prose-analysis em { color: var(--color-sys-muted); font-style: italic; }
+
+
