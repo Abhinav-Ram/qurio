@@ -245,54 +245,79 @@ function ContextWorkspace() {
 
         {/* Main */}
         <main className="p-5 md:p-8 max-w-3xl w-full mx-auto">
-          <div className="flex items-end justify-between gap-3 flex-wrap mb-6">
+          <div className="flex items-end justify-between gap-3 flex-wrap mb-4">
             <div>
-              <h1 className="text-2xl font-semibold">Interview questions</h1>
+              <h1 className="text-2xl font-semibold">
+                {tab === "questions" ? "Interview questions" : "Responses"}
+              </h1>
               <p className="text-sm text-sys-muted">
-                Review the AI-generated probes, edit anything, then share with your interviewee.
+                {tab === "questions"
+                  ? "Review the AI-generated probes, edit anything, then share with your interviewee."
+                  : "Each interviewee's answers, listed in the order the questions were asked."}
               </p>
             </div>
             <div className="flex gap-2">
-              {questions.length > 0 && (
+              {tab === "questions" && questions.length > 0 && (
                 <Button variant="outline" onClick={runGenerate} disabled={generating}>
                   <Sparkles className="size-4" />
                   Regenerate
                 </Button>
               )}
-              <Button onClick={openShare} disabled={questions.length === 0 || generating}>
-                <Share2 className="size-4" />
-                Save & share
-              </Button>
+              {tab === "questions" && (
+                <Button onClick={openShare} disabled={questions.length === 0 || generating}>
+                  <Share2 className="size-4" />
+                  Save & share
+                </Button>
+              )}
             </div>
           </div>
 
-          {generating ? (
-            <div className="border border-dashed border-border rounded-lg p-12 text-center">
-              <Loader2 className="size-6 mx-auto animate-spin text-sys-cyan mb-3" />
-              <p className="text-sm text-sys-muted font-mono uppercase tracking-widest">
-                Drafting probe sequence…
-              </p>
-            </div>
-          ) : questions.length === 0 ? (
-            <div className="border border-dashed border-border rounded-lg p-10 text-center">
-              <p className="text-sm text-sys-muted mb-4">No questions yet.</p>
-              <Button onClick={runGenerate}>
-                <Sparkles className="size-4" />
-                Generate questions
-              </Button>
-            </div>
-          ) : (
-            <ul className="space-y-4">
-              {questions.map((q, idx) => (
-                <QuestionCard
-                  key={q.id}
-                  index={idx}
-                  question={q}
-                  onSaved={(updated) =>
-                    setQuestions((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
-                  }
-                />
-              ))}
+          {/* Tabs */}
+          <div className="flex gap-1 border-b border-border mb-6 -mx-1">
+            <TabButton
+              active={tab === "questions"}
+              onClick={() => setTab("questions")}
+              icon={<ListChecks className="size-3.5" />}
+              label="Questions"
+              count={questions.length}
+            />
+            <TabButton
+              active={tab === "responses"}
+              onClick={() => setTab("responses")}
+              icon={<Inbox className="size-3.5" />}
+              label="Responses"
+              count={responses?.length ?? null}
+            />
+          </div>
+
+          {tab === "questions" ? (
+            generating ? (
+              <div className="border border-dashed border-border rounded-lg p-12 text-center">
+                <Loader2 className="size-6 mx-auto animate-spin text-sys-cyan mb-3" />
+                <p className="text-sm text-sys-muted font-mono uppercase tracking-widest">
+                  Drafting probe sequence…
+                </p>
+              </div>
+            ) : questions.length === 0 ? (
+              <div className="border border-dashed border-border rounded-lg p-10 text-center">
+                <p className="text-sm text-sys-muted mb-4">No questions yet.</p>
+                <Button onClick={runGenerate}>
+                  <Sparkles className="size-4" />
+                  Generate questions
+                </Button>
+              </div>
+            ) : (
+              <ul className="space-y-4">
+                {questions.map((q, idx) => (
+                  <QuestionCard
+                    key={q.id}
+                    index={idx}
+                    question={q}
+                    onSaved={(updated) =>
+                      setQuestions((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+                    }
+                  />
+                ))}
             </ul>
           )}
         </main>
