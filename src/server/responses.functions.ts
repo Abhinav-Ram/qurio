@@ -1,18 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { followUpPrompt, AI_GATEWAY_URL, getAIApiKey } from "./prompts";
 
 function getSupabase() {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_PUBLISHABLE_KEY ||
-    process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) throw new Error("Supabase env vars not configured on server.");
-  return createClient<Database>(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  return supabaseAdmin;
 }
 
 export interface PublicQuestion {
@@ -104,8 +95,14 @@ export const submitInterviewResponse = createServerFn({ method: "POST" })
       .select("id")
       .eq("share_slug", data.slug)
       .maybeSingle();
-    if (ctxErr) throw new Error(ctxErr.message);
-    if (!ctx) throw new Error("Interview not found");
+    if (ctxErr) {
+      console.error("submitInterviewResponse: lookup error", { slug: data.slug, error: ctxErr.message });
+      throw new Error(ctxErr.message);
+    }
+    if (!ctx) {
+      console.error("submitInterviewResponse: no context for slug", { slug: data.slug });
+      throw new Error("Interview not found");
+    }
 
     const { error: insErr } = await sb.from("interview_responses").insert({
       context_id: ctx.id,
