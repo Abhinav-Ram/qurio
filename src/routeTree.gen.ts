@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ISlugRouteImport } from './routes/i.$slug'
 import { Route as ContextsNewRouteImport } from './routes/contexts.new'
 import { Route as ContextsIdRouteImport } from './routes/contexts.$id'
+import { Route as ContextsIdReviewRouteImport } from './routes/contexts.$id.review'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -46,31 +47,39 @@ const ContextsIdRoute = ContextsIdRouteImport.update({
   path: '/contexts/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContextsIdReviewRoute = ContextsIdReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => ContextsIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/contexts/$id': typeof ContextsIdRoute
+  '/contexts/$id': typeof ContextsIdRouteWithChildren
   '/contexts/new': typeof ContextsNewRoute
   '/i/$slug': typeof ISlugRoute
+  '/contexts/$id/review': typeof ContextsIdReviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/contexts/$id': typeof ContextsIdRoute
+  '/contexts/$id': typeof ContextsIdRouteWithChildren
   '/contexts/new': typeof ContextsNewRoute
   '/i/$slug': typeof ISlugRoute
+  '/contexts/$id/review': typeof ContextsIdReviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/contexts/$id': typeof ContextsIdRoute
+  '/contexts/$id': typeof ContextsIdRouteWithChildren
   '/contexts/new': typeof ContextsNewRoute
   '/i/$slug': typeof ISlugRoute
+  '/contexts/$id/review': typeof ContextsIdReviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +90,7 @@ export interface FileRouteTypes {
     | '/contexts/$id'
     | '/contexts/new'
     | '/i/$slug'
+    | '/contexts/$id/review'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/contexts/$id'
     | '/contexts/new'
     | '/i/$slug'
+    | '/contexts/$id/review'
   id:
     | '__root__'
     | '/'
@@ -97,13 +108,14 @@ export interface FileRouteTypes {
     | '/contexts/$id'
     | '/contexts/new'
     | '/i/$slug'
+    | '/contexts/$id/review'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
-  ContextsIdRoute: typeof ContextsIdRoute
+  ContextsIdRoute: typeof ContextsIdRouteWithChildren
   ContextsNewRoute: typeof ContextsNewRoute
   ISlugRoute: typeof ISlugRoute
 }
@@ -152,14 +164,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContextsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contexts/$id/review': {
+      id: '/contexts/$id/review'
+      path: '/review'
+      fullPath: '/contexts/$id/review'
+      preLoaderRoute: typeof ContextsIdReviewRouteImport
+      parentRoute: typeof ContextsIdRoute
+    }
   }
 }
+
+interface ContextsIdRouteChildren {
+  ContextsIdReviewRoute: typeof ContextsIdReviewRoute
+}
+
+const ContextsIdRouteChildren: ContextsIdRouteChildren = {
+  ContextsIdReviewRoute: ContextsIdReviewRoute,
+}
+
+const ContextsIdRouteWithChildren = ContextsIdRoute._addFileChildren(
+  ContextsIdRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
-  ContextsIdRoute: ContextsIdRoute,
+  ContextsIdRoute: ContextsIdRouteWithChildren,
   ContextsNewRoute: ContextsNewRoute,
   ISlugRoute: ISlugRoute,
 }
