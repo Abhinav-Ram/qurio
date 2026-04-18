@@ -71,6 +71,8 @@ function ContextWorkspace() {
   const [shareOpen, setShareOpen] = useState(false);
   const [shareSlug, setShareSlug] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [tab, setTab] = useState<"questions" | "responses">("questions");
+  const [responses, setResponses] = useState<ResponseRow[] | null>(null);
 
   // Load context + existing questions
   useEffect(() => {
