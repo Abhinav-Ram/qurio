@@ -269,7 +269,7 @@ function ContextWorkspace() {
               </p>
             </div>
             <div className="flex gap-2">
-              {tab === "questions" && questions.length > 0 && (
+              {tab === "questions" && questions.length > 0 && !shareSlug && (
                 <Button variant="outline" onClick={runGenerate} disabled={generating}>
                   <Sparkles className="size-4" />
                   Regenerate
@@ -278,7 +278,7 @@ function ContextWorkspace() {
               {tab === "questions" && (
                 <Button onClick={openShare} disabled={questions.length === 0 || generating}>
                   <Share2 className="size-4" />
-                  Save & share
+                  {shareSlug ? "Share link" : "Save & share"}
                 </Button>
               )}
             </div>
