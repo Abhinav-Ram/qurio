@@ -311,7 +311,7 @@ ${transcript}`;
 
     const { error: updErr } = await sb
       .from("interview_contexts")
-      .update({ analysis: report as unknown as Database["public"]["Tables"]["interview_contexts"]["Update"]["analysis"] })
+      .update({ analysis: report as unknown as Database["public"]["Tables"]["interview_contexts"]["Row"]["analysis"] })
       .eq("id", data.contextId);
     if (updErr) throw new Error(updErr.message);
 
