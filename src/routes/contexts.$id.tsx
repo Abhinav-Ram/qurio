@@ -327,142 +327,28 @@ function ContextWorkspace() {
 function QuestionCard({
   index,
   question,
-  onSaved,
 }: {
   index: number;
   question: QuestionRow;
-  onSaved: (q: QuestionRow) => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [vector, setVector] = useState(question.vector);
-  const [text, setText] = useState(question.text);
-  const [followUps, setFollowUps] = useState<string[]>(question.follow_ups);
-  const [saving, setSaving] = useState(false);
-
-  function reset() {
-    setVector(question.vector);
-    setText(question.text);
-    setFollowUps(question.follow_ups);
-    setEditing(false);
-  }
-
-  async function save() {
-    setSaving(true);
-    try {
-      await updateQuestion({
-        data: {
-          id: question.id,
-          vector: vector.trim(),
-          text: text.trim(),
-          followUps: followUps.map((s) => s.trim()).filter(Boolean),
-        },
-      });
-      onSaved({
-        ...question,
-        vector: vector.trim(),
-        text: text.trim(),
-        follow_ups: followUps.map((s) => s.trim()).filter(Boolean),
-      });
-      setEditing(false);
-      toast.success("Question updated");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
     <li className="bg-card border border-border rounded-lg p-4">
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-sys-muted">
-          <span>Q.{String(index + 1).padStart(2, "0")}</span>
-          {!editing && question.vector && (
-            <span className="text-sys-cyan">// {question.vector}</span>
-          )}
-        </div>
-        {!editing ? (
-          <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
-            <Edit2 className="size-3" /> Edit
-          </Button>
-        ) : (
-          <div className="flex gap-1">
-            <Button size="sm" variant="ghost" onClick={reset} disabled={saving}>
-              <X className="size-3" /> Cancel
-            </Button>
-            <Button size="sm" onClick={save} disabled={saving || !text.trim()}>
-              <Check className="size-3" /> {saving ? "Saving…" : "Save"}
-            </Button>
-          </div>
-        )}
+      <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-sys-muted mb-2">
+        <span>Q.{String(index + 1).padStart(2, "0")}</span>
+        {question.vector && <span className="text-sys-cyan">// {question.vector}</span>}
       </div>
-
-      {!editing ? (
-        <>
-          <p className="text-sm leading-relaxed mb-3">{question.text}</p>
-          {question.follow_ups.length > 0 && (
-            <ul className="space-y-1 pl-4 border-l border-border">
-              {question.follow_ups.map((fu, i) => (
-                <li
-                  key={i}
-                  className="text-xs text-sys-muted leading-relaxed font-mono before:content-['↳'] before:text-sys-amber before:mr-2"
-                >
-                  {fu}
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      ) : (
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-[10px] uppercase tracking-widest text-sys-muted">
-              Vector (theme)
-            </Label>
-            <Input value={vector} onChange={(e) => setVector(e.target.value)} maxLength={80} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-[10px] uppercase tracking-widest text-sys-muted">Question</Label>
-            <Textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              className="min-h-[90px]"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-[10px] uppercase tracking-widest text-sys-muted">
-              Follow-up probes
-            </Label>
-            {followUps.map((fu, i) => (
-              <div key={i} className="flex gap-2">
-                <Input
-                  value={fu}
-                  onChange={(e) =>
-                    setFollowUps((prev) => prev.map((p, idx) => (idx === i ? e.target.value : p)))
-                  }
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setFollowUps((prev) => prev.filter((_, idx) => idx !== i))}
-                >
-                  <X className="size-3" />
-                </Button>
-              </div>
-            ))}
-            {followUps.length < 5 && (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => setFollowUps((prev) => [...prev, ""])}
-              >
-                + Add follow-up
-              </Button>
-            )}
-          </div>
-        </div>
+      <p className="text-sm leading-relaxed mb-3">{question.text}</p>
+      {question.follow_ups.length > 0 && (
+        <ul className="space-y-1 pl-4 border-l border-border">
+          {question.follow_ups.map((fu, i) => (
+            <li
+              key={i}
+              className="text-xs text-sys-muted leading-relaxed font-mono before:content-['↳'] before:text-sys-amber before:mr-2"
+            >
+              {fu}
+            </li>
+          ))}
+        </ul>
       )}
     </li>
   );
