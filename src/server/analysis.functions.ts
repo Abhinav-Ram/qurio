@@ -120,25 +120,13 @@ export const generateAnalysis = createServerFn({ method: "POST" })
       })
       .join("\n\n");
 
-    const systemPrompt = `You are an evidence-grounded qualitative research analyst.
-Follow these MANDATORY rules:
-- Every claim MUST be atomic and derived from explicit input text.
-- Every claim MUST include a direct supporting quote from a participant.
-- Do NOT merge conflicting viewpoints — preserve contradictions explicitly.
-- Do NOT invent insights without evidence.
-- Do NOT use probability, scoring, or confidence metrics.
-- If evidence is insufficient, return verdict 'Inconclusive' with a clear explanation.
-- Use participant IDs (P1, P2, ...) as the source for evidence.
-Return ONLY a tool call.`;
-
-    const userPrompt = `INTERVIEW CONTEXT:
-${ctx.context || "(none)"}
-
-HYPOTHESIS:
-${ctx.hypothesis || "None provided"}
-
-INTERVIEW TRANSCRIPT (${rs.length} participant${rs.length === 1 ? "" : "s"}):
-${transcript}`;
+    const systemPrompt = analysisPrompt.system;
+    const userPrompt = analysisPrompt.user({
+      context: ctx.context,
+      hypothesis: ctx.hypothesis,
+      transcript,
+      participantCount: rs.length,
+    });
 
     const body = {
       model: MODEL,
