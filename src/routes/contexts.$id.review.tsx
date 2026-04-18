@@ -23,6 +23,9 @@ import {
 } from "@/server/questions.functions";
 
 export const Route = createFileRoute("/contexts/$id/review")({
+  validateSearch: (search: Record<string, unknown>): { autogen?: string } => ({
+    autogen: typeof search.autogen === "string" ? search.autogen : undefined,
+  }),
   beforeLoad: () => {
     if (!isLoggedIn()) throw redirect({ to: "/login" });
   },
