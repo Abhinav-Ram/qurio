@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   Edit2,
@@ -56,6 +56,7 @@ function ReviewPage() {
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [generating, setGenerating] = useState(false);
+  const autogenStartedRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -94,22 +95,17 @@ function ReviewPage() {
     };
   }, [id, navigate]);
 
-  // Auto-generate when arriving from the create flow
+  // Auto-generate once when arriving from the create flow
   useEffect(() => {
-    if (loading || generating) return;
+    if (loading || generating || autogenStartedRef.current) return;
     if (search.autogen && questions.length === 0 && ctx) {
-      void runGenerate();
-      navigate({
-        to: "/contexts/$id/review",
-        params: { id },
-        search: {},
-        replace: true,
-      });
+      autogenStartedRef.current = true;
+      void runGenerate({ clearAutogenAfter: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, ctx, search.autogen]);
+  }, [loading, ctx, search.autogen, questions.length, generating]);
 
-  async function runGenerate() {
+  async function runGenerate(opts?: { clearAutogenAfter?: boolean }) {
     if (!ctx) return;
     setGenerating(true);
     try {
@@ -125,6 +121,14 @@ function ReviewPage() {
       toast.error(err instanceof Error ? err.message : "Generation failed");
     } finally {
       setGenerating(false);
+      if (opts?.clearAutogenAfter && search.autogen) {
+        navigate({
+          to: "/contexts/$id/review",
+          params: { id },
+          search: {},
+          replace: true,
+        });
+      }
     }
   }
 
