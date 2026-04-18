@@ -59,6 +59,13 @@ type QuestionRow = {
   position: number;
 };
 
+type ResponseRow = {
+  id: string;
+  respondent_name: string;
+  submitted_at: string;
+  answers: { questionId: string; answer: string }[];
+};
+
 function ContextWorkspace() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
