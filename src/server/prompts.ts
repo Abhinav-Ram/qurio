@@ -1,15 +1,30 @@
 /**
- * Central registry for all AI prompts used across the pipeline.
+ * Central registry for all AI configuration used across the pipeline:
+ * - Gateway URL (Lovable AI Gateway endpoint)
+ * - API key accessor (reads LOVABLE_API_KEY from server env)
+ * - Per-stage model selection
+ * - Per-stage system + user prompts
  *
- * Each stage exports a `system` prompt (rules / persona) and a `user(...)`
- * builder that injects the runtime data. Tune wording here without touching
- * server-function logic.
+ * Tune everything AI-related here without touching server-function logic.
  */
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared gateway config
+// ─────────────────────────────────────────────────────────────────────────────
+export const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+
+export function getAIApiKey(): string {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) throw new Error("LOVABLE_API_KEY is not configured");
+  return key;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Stage 1: Question generation (src/server/questions.functions.ts)
 // ─────────────────────────────────────────────────────────────────────────────
 export const questionsPrompt = {
+  model: "google/gemini-2.5-flash",
+
   system: `You are a senior qualitative research strategist designing interview question sets.
 
 Generate 5–8 structured, OPEN-ENDED interview questions grounded in the supplied context.
