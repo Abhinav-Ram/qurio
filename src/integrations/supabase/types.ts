@@ -158,6 +158,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_reset_password_by_username: {
+        Args: { p_new_password: string; p_username: string }
+        Returns: boolean
+      }
       is_username_available: { Args: { uname: string }; Returns: boolean }
       lookup_email_by_identifier: {
         Args: { identifier: string }
