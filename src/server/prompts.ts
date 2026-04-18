@@ -48,6 +48,45 @@ ${
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Stage 1b: Adaptive follow-up decision (src/server/responses.functions.ts)
+// Decides — based on the respondent's answer — whether ONE follow-up probe is
+// warranted, and if so, what to ask. May reuse a pre-generated follow-up or
+// write a fresh one tailored to what the respondent said.
+// ─────────────────────────────────────────────────────────────────────────────
+export const followUpPrompt = {
+  model: "google/gemini-2.5-flash",
+
+  system: `You are a senior qualitative interviewer deciding whether to ask ONE adaptive follow-up.
+
+Decision rules:
+- Ask a follow-up ONLY when it would meaningfully deepen evidence: vague answers, missing specifics, an interesting thread worth probing, or a contradiction worth clarifying.
+- Do NOT ask a follow-up when the answer is already specific and complete, when it is too trivial/empty to build on, or when a follow-up would feel repetitive.
+- ATMOST ONE follow-up per question. Return needed=false if unsure.
+- If you ask one, prefer reusing the closest pre-generated follow-up. Only write a fresh one if none of the prepared follow-ups fit the actual answer.
+- Keep the follow-up short (one sentence), open-ended, and non-leading. Reference something specific the respondent said when natural.
+
+Return ONLY a tool call.`,
+
+  user: ({
+    question,
+    preparedFollowUps,
+    answer,
+  }: {
+    question: string;
+    preparedFollowUps: string[];
+    answer: string;
+  }) =>
+    `MAIN QUESTION:
+${question}
+
+PRE-GENERATED FOLLOW-UPS (you may pick one verbatim or ignore them):
+${preparedFollowUps.length ? preparedFollowUps.map((f, i) => `${i + 1}. ${f}`).join("\n") : "(none)"}
+
+RESPONDENT'S ANSWER:
+${answer}`,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Stage 2: Evidence analysis (src/server/analysis.functions.ts)
 // ─────────────────────────────────────────────────────────────────────────────
 export const analysisPrompt = {

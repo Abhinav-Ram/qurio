@@ -99,12 +99,20 @@ export const generateAnalysis = createServerFn({ method: "POST" })
         const pid = `P${idx + 1}`;
         const name = (r.respondent_name as string) || "Anonymous";
         const answers = Array.isArray(r.answers)
-          ? (r.answers as { questionId: string; answer: string }[])
+          ? (r.answers as {
+              questionId: string;
+              answer: string;
+              followUp?: { question: string; answer: string } | null;
+            }[])
           : [];
         const lines = answers
           .map((a) => {
             const qt = qMap.get(a.questionId) ?? "(question removed)";
-            return `Q: ${qt}\nA: ${a.answer || "(no answer)"}`;
+            const main = `Q: ${qt}\nA: ${a.answer || "(no answer)"}`;
+            if (a.followUp && a.followUp.question) {
+              return `${main}\n  ↳ Follow-up: ${a.followUp.question}\n  ↳ A: ${a.followUp.answer || "(no answer)"}`;
+            }
+            return main;
           })
           .join("\n\n");
         return `--- Participant ${pid} (${name}) ---\n${lines}`;
