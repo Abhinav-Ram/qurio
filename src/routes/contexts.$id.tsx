@@ -2,10 +2,6 @@ import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-ro
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
-  Edit2,
-  Check,
-  X,
-  Sparkles,
   Share2,
   Copy,
   Loader2,
@@ -17,8 +13,6 @@ import { toast } from "sonner";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -28,11 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { isLoggedIn } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  generateQuestionsForContext,
-  updateQuestion,
-  ensureShareSlug,
-} from "@/server/questions.functions";
+import { ensureShareSlug } from "@/server/questions.functions";
 import type { AnalysisReport } from "@/server/analysis.functions";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
 
