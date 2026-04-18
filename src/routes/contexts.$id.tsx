@@ -117,7 +117,7 @@ function ContextWorkspace() {
     try {
       const res = await generateQuestionsForContext({ data: { contextId: ctx.id } });
       setQuestions(
-        res.questions.map((r) => ({
+        (res.questions as QuestionRow[]).map((r) => ({
           ...r,
           follow_ups: Array.isArray(r.follow_ups) ? (r.follow_ups as string[]) : [],
         })),
