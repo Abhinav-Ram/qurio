@@ -51,6 +51,7 @@ ${
 // Stage 2: Evidence analysis (src/server/analysis.functions.ts)
 // ─────────────────────────────────────────────────────────────────────────────
 export const analysisPrompt = {
+  model: "google/gemini-2.5-pro",
   system: `You are an evidence-grounded qualitative research analyst.
 Follow these MANDATORY rules:
 - Every claim MUST be atomic and derived from explicit input text.

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { questionsPrompt } from "./prompts";
+import { questionsPrompt, AI_GATEWAY_URL, getAIApiKey } from "./prompts";
 
 function getSupabase() {
   const url =
@@ -15,15 +15,6 @@ function getSupabase() {
   return createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-}
-
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-2.5-flash";
-
-function getApiKey(): string {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("LOVABLE_API_KEY is not configured");
-  return key;
 }
 
 interface GenerateInput {
@@ -53,7 +44,7 @@ export const generateQuestionsForContext = createServerFn({ method: "POST" })
     });
 
     const body = {
-      model: MODEL,
+      model: questionsPrompt.model,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -97,10 +88,10 @@ export const generateQuestionsForContext = createServerFn({ method: "POST" })
       tool_choice: { type: "function", function: { name: "emit_questions" } },
     };
 
-    const res = await fetch(GATEWAY_URL, {
+    const res = await fetch(AI_GATEWAY_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${getApiKey()}`,
+        Authorization: `Bearer ${getAIApiKey()}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
