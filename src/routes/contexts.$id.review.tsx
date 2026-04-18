@@ -197,7 +197,7 @@ function ReviewPage() {
           </div>
 
           <div className="flex justify-end gap-2 mb-6 flex-wrap">
-            <Button variant="outline" onClick={runGenerate} disabled={generating}>
+            <Button variant="outline" onClick={() => runGenerate()} disabled={generating}>
               <Sparkles className="size-4" />
               {generating ? "Regenerating…" : "Regenerate"}
             </Button>
@@ -217,7 +217,7 @@ function ReviewPage() {
           ) : questions.length === 0 ? (
             <div className="border border-dashed border-border rounded-lg p-10 text-center">
               <p className="text-sm text-sys-muted mb-4">No questions yet.</p>
-              <Button onClick={runGenerate}>
+              <Button onClick={() => runGenerate()}>
                 <Sparkles className="size-4" />
                 Generate questions
               </Button>
