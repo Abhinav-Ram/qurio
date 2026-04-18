@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Loader2, Send } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, CornerDownRight, Loader2, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  decideFollowUp,
   getInterviewBySlug,
   submitInterviewResponse,
   type PublicInterview,
@@ -19,6 +20,17 @@ export const Route = createFileRoute("/i/$slug")({
   }),
 });
 
+interface MainAnswer {
+  answer: string;
+  followUp?: {
+    question: string;
+    answer: string;
+    source: "prepared" | "fresh";
+  } | null;
+  // Cached so we don't re-call the AI on Back/Next bounces unless answer changes.
+  decidedFor?: string;
+}
+
 function InterviewForm() {
   const { slug } = Route.useParams();
   const [interview, setInterview] = useState<PublicInterview | null>(null);
@@ -26,8 +38,11 @@ function InterviewForm() {
   const [error, setError] = useState<string | null>(null);
 
   const [name, setName] = useState("");
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [step, setStep] = useState(0); // 0 = name, then 1..N for questions, then N+1 = review
+  const [answers, setAnswers] = useState<Record<string, MainAnswer>>({});
+  // Step model: 0 = name. Then for each question: a "main" sub-step and optional "follow" sub-step. Then review.
+  const [step, setStep] = useState(0);
+  const [subStep, setSubStep] = useState<"main" | "follow">("main");
+  const [deciding, setDeciding] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -51,23 +66,145 @@ function InterviewForm() {
   }, [slug]);
 
   const totalQuestions = interview?.questions.length ?? 0;
-  const totalSteps = totalQuestions + 2; // name + questions + review
+  // Steps: 0 = name, 1..N = questions, N+1 = review
+  const totalSteps = totalQuestions + 2;
   const onNameStep = step === 0;
   const onReviewStep = step === totalSteps - 1;
   const currentQuestion = useMemo(
     () => (!onNameStep && !onReviewStep ? interview?.questions[step - 1] : null),
     [interview, step, onNameStep, onReviewStep],
   );
+  const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
 
-  function next() {
-    if (onNameStep && !name.trim()) {
-      toast.error("Please enter your name first");
+  function setMainAnswer(qid: string, value: string) {
+    setAnswers((prev) => {
+      const existing = prev[qid];
+      // If the main answer changed, drop any cached follow-up — it's stale.
+      const followUp = existing?.decidedFor === value ? existing.followUp : null;
+      return {
+        ...prev,
+        [qid]: {
+          answer: value,
+          followUp,
+          decidedFor: existing?.decidedFor === value ? existing.decidedFor : undefined,
+        },
+      };
+    });
+  }
+
+  function setFollowUpAnswer(qid: string, value: string) {
+    setAnswers((prev) => {
+      const existing = prev[qid];
+      if (!existing?.followUp) return prev;
+      return {
+        ...prev,
+        [qid]: {
+          ...existing,
+          followUp: { ...existing.followUp, answer: value },
+        },
+      };
+    });
+  }
+
+  async function next() {
+    if (onNameStep) {
+      if (!name.trim()) {
+        toast.error("Please enter your name first");
+        return;
+      }
+      setStep(1);
+      setSubStep("main");
       return;
     }
+
+    if (currentQuestion) {
+      const a = answers[currentQuestion.id];
+      const text = (a?.answer ?? "").trim();
+
+      if (subStep === "main") {
+        if (!text) {
+          toast.error("Please share at least a brief answer before continuing.");
+          return;
+        }
+
+        // If we already decided for this exact answer, reuse the decision.
+        if (a?.decidedFor === a?.answer && a?.followUp) {
+          setSubStep("follow");
+          return;
+        }
+        if (a?.decidedFor === a?.answer && !a?.followUp) {
+          advancePastQuestion();
+          return;
+        }
+
+        // Ask the AI whether a follow-up is warranted.
+        setDeciding(true);
+        try {
+          const decision = await decideFollowUp({
+            data: {
+              question: currentQuestion.text,
+              preparedFollowUps: currentQuestion.follow_ups,
+              answer: text,
+            },
+          });
+          if (decision.needed && decision.question && decision.source) {
+            setAnswers((prev) => ({
+              ...prev,
+              [currentQuestion.id]: {
+                ...(prev[currentQuestion.id] ?? { answer: text }),
+                answer: text,
+                decidedFor: text,
+                followUp: {
+                  question: decision.question!,
+                  answer: prev[currentQuestion.id]?.followUp?.answer ?? "",
+                  source: decision.source,
+                },
+              },
+            }));
+            setSubStep("follow");
+          } else {
+            setAnswers((prev) => ({
+              ...prev,
+              [currentQuestion.id]: {
+                ...(prev[currentQuestion.id] ?? { answer: text }),
+                answer: text,
+                decidedFor: text,
+                followUp: null,
+              },
+            }));
+            advancePastQuestion();
+          }
+        } catch (err) {
+          console.error(err);
+          // Fail open: if the decision call breaks, just move on.
+          advancePastQuestion();
+        } finally {
+          setDeciding(false);
+        }
+        return;
+      }
+
+      // subStep === "follow" → done with this question (follow-up answer optional)
+      advancePastQuestion();
+    }
+  }
+
+  function advancePastQuestion() {
+    setSubStep("main");
     setStep((s) => Math.min(s + 1, totalSteps - 1));
   }
+
   function prev() {
-    setStep((s) => Math.max(s - 1, 0));
+    if (subStep === "follow") {
+      setSubStep("main");
+      return;
+    }
+    setStep((s) => {
+      const target = Math.max(s - 1, 0);
+      // When stepping back into a question, jump straight to its main view.
+      setSubStep("main");
+      return target;
+    });
   }
 
   async function submit() {
@@ -78,10 +215,17 @@ function InterviewForm() {
         data: {
           slug,
           respondentName: name.trim(),
-          answers: interview.questions.map((q) => ({
-            questionId: q.id,
-            answer: answers[q.id] ?? "",
-          })),
+          answers: interview.questions.map((q) => {
+            const a = answers[q.id];
+            return {
+              questionId: q.id,
+              answer: a?.answer ?? "",
+              followUp:
+                a?.followUp && a.followUp.question
+                  ? { question: a.followUp.question, answer: a.followUp.answer ?? "" }
+                  : null,
+            };
+          }),
         },
       });
       setDone(true);
@@ -135,7 +279,12 @@ function InterviewForm() {
     );
   }
 
-  const progressPct = Math.round((step / (totalSteps - 1)) * 100);
+  // Progress accounts for the optional follow-up sub-step within a question.
+  const baseProgress = step / (totalSteps - 1);
+  const subProgress = subStep === "follow" ? 0.5 / (totalSteps - 1) : 0;
+  const progressPct = Math.min(100, Math.round((baseProgress + subProgress) * 100));
+
+  const onFollowSub = !!currentQuestion && subStep === "follow" && !!currentAnswer?.followUp;
 
   return (
     <div className="min-h-dvh flex flex-col">
@@ -158,7 +307,9 @@ function InterviewForm() {
             ? "Step 1 — about you"
             : onReviewStep
               ? `Review — ${totalQuestions} answers`
-              : `Question ${step} of ${totalQuestions}`}
+              : onFollowSub
+                ? `Question ${step} of ${totalQuestions} — follow-up`
+                : `Question ${step} of ${totalQuestions}`}
         </p>
 
         {onNameStep && (
@@ -180,7 +331,7 @@ function InterviewForm() {
           </div>
         )}
 
-        {currentQuestion && (
+        {currentQuestion && subStep === "main" && (
           <div className="space-y-4">
             {currentQuestion.vector && (
               <p className="font-mono text-[10px] uppercase tracking-widest text-sys-cyan">
@@ -188,31 +339,65 @@ function InterviewForm() {
               </p>
             )}
             <h2 className="text-2xl font-semibold leading-snug">{currentQuestion.text}</h2>
-            {currentQuestion.follow_ups.length > 0 && (
-              <ul className="space-y-1 pl-4 border-l border-border">
-                {currentQuestion.follow_ups.map((fu, i) => (
-                  <li
-                    key={i}
-                    className="text-xs text-sys-muted leading-relaxed font-mono before:content-['↳'] before:text-sys-amber before:mr-2"
-                  >
-                    {fu}
-                  </li>
-                ))}
-              </ul>
-            )}
             <div className="space-y-1 pt-2">
               <Label className="text-[10px] uppercase tracking-widest text-sys-muted">
                 Your answer
               </Label>
               <Textarea
-                value={answers[currentQuestion.id] ?? ""}
-                onChange={(e) =>
-                  setAnswers((prev) => ({ ...prev, [currentQuestion.id]: e.target.value }))
-                }
+                value={currentAnswer?.answer ?? ""}
+                onChange={(e) => setMainAnswer(currentQuestion.id, e.target.value)}
                 placeholder="Take your time. Specifics and examples are gold."
                 className="min-h-[180px]"
                 autoFocus
+                required
               />
+              <p className="text-[11px] text-sys-muted pt-1">
+                An answer is required to continue. Based on what you share, we may ask one quick
+                follow-up.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {onFollowSub && currentQuestion && currentAnswer?.followUp && (
+          <div className="space-y-4">
+            {/* Recap of the main question + answer for context */}
+            <div className="bg-card border border-border rounded-md p-3">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-sys-muted mb-1">
+                You just answered
+              </p>
+              <p className="text-sm font-medium mb-2">{currentQuestion.text}</p>
+              <p className="text-sm text-sys-muted whitespace-pre-wrap line-clamp-4">
+                {currentAnswer.answer}
+              </p>
+            </div>
+
+            {/* Visually distinct follow-up card — amber accent + corner arrow */}
+            <div className="relative border-l-4 border-sys-amber bg-sys-amber/5 rounded-r-md p-4 space-y-3">
+              <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-sys-amber">
+                <CornerDownRight className="size-3.5" />
+                <span>Follow-up</span>
+                {currentAnswer.followUp.source === "fresh" && (
+                  <span className="inline-flex items-center gap-1 text-sys-amber/80 normal-case tracking-normal text-[10px]">
+                    <Sparkles className="size-3" /> tailored to your answer
+                  </span>
+                )}
+              </div>
+              <h2 className="text-xl font-semibold leading-snug">
+                {currentAnswer.followUp.question}
+              </h2>
+              <div className="space-y-1 pt-1">
+                <Label className="text-[10px] uppercase tracking-widest text-sys-muted">
+                  Your answer (optional)
+                </Label>
+                <Textarea
+                  value={currentAnswer.followUp.answer ?? ""}
+                  onChange={(e) => setFollowUpAnswer(currentQuestion.id, e.target.value)}
+                  placeholder="Add detail, an example, or skip and continue."
+                  className="min-h-[140px]"
+                  autoFocus
+                />
+              </div>
             </div>
           </div>
         )}
@@ -224,31 +409,59 @@ function InterviewForm() {
               Edit anything by clicking back, then submit when you're ready.
             </p>
             <ul className="space-y-4">
-              {interview.questions.map((q, i) => (
-                <li key={q.id} className="bg-card border border-border rounded-lg p-4">
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-sys-muted mb-1">
-                    Q.{String(i + 1).padStart(2, "0")}
-                  </p>
-                  <p className="text-sm font-medium mb-2">{q.text}</p>
-                  <p className="text-sm text-sys-muted whitespace-pre-wrap">
-                    {answers[q.id]?.trim() || (
-                      <span className="italic text-sys-amber">— skipped —</span>
+              {interview.questions.map((q, i) => {
+                const a = answers[q.id];
+                return (
+                  <li key={q.id} className="bg-card border border-border rounded-lg p-4">
+                    <p className="font-mono text-[10px] uppercase tracking-widest text-sys-muted mb-1">
+                      Q.{String(i + 1).padStart(2, "0")}
+                    </p>
+                    <p className="text-sm font-medium mb-2">{q.text}</p>
+                    <p className="text-sm text-sys-muted whitespace-pre-wrap">
+                      {a?.answer?.trim() || (
+                        <span className="italic text-sys-amber">— skipped —</span>
+                      )}
+                    </p>
+                    {a?.followUp && (
+                      <div className="mt-3 border-l-2 border-sys-amber pl-3">
+                        <p className="font-mono text-[10px] uppercase tracking-widest text-sys-amber mb-1 flex items-center gap-1">
+                          <CornerDownRight className="size-3" /> Follow-up
+                        </p>
+                        <p className="text-sm font-medium mb-1">{a.followUp.question}</p>
+                        <p className="text-sm text-sys-muted whitespace-pre-wrap">
+                          {a.followUp.answer?.trim() || (
+                            <span className="italic text-sys-muted/70">— no answer —</span>
+                          )}
+                        </p>
+                      </div>
                     )}
-                  </p>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
 
         <div className="flex justify-between gap-3 mt-8">
-          <Button variant="ghost" onClick={prev} disabled={step === 0 || submitting}>
+          <Button
+            variant="ghost"
+            onClick={prev}
+            disabled={(step === 0 && subStep === "main") || submitting || deciding}
+          >
             <ArrowLeft className="size-4" /> Back
           </Button>
 
           {!onReviewStep ? (
-            <Button onClick={next}>
-              Next <ArrowRight className="size-4" />
+            <Button onClick={next} disabled={deciding}>
+              {deciding ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" /> Thinking…
+                </>
+              ) : (
+                <>
+                  Next <ArrowRight className="size-4" />
+                </>
+              )}
             </Button>
           ) : (
             <Button onClick={submit} disabled={submitting}>
