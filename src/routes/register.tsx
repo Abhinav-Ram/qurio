@@ -63,12 +63,8 @@ function RegisterPage() {
       toast.error("Username must be 3–32 chars: letters, numbers, _ or .");
       return;
     }
-    if (password.length < 8) {
-      toast.error("Password must be at least 8 characters");
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
+    if (!allPwOk) {
+      toast.error("Password does not meet all requirements");
       return;
     }
 
