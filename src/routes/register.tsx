@@ -40,6 +40,20 @@ function RegisterPage() {
   const [verifying, setVerifying] = useState(false);
   const [resending, setResending] = useState(false);
 
+  // Password rule checks (live)
+  const pwRules = [
+    { label: "At least 8 characters", ok: password.length >= 8 },
+    { label: "One uppercase letter (A–Z)", ok: /[A-Z]/.test(password) },
+    { label: "One lowercase letter (a–z)", ok: /[a-z]/.test(password) },
+    { label: "One number (0–9)", ok: /[0-9]/.test(password) },
+    { label: "One symbol (!@#$…)", ok: /[^A-Za-z0-9]/.test(password) },
+    {
+      label: "Matches confirmation",
+      ok: password.length > 0 && password === confirmPassword,
+    },
+  ];
+  const allPwOk = pwRules.every((r) => r.ok);
+
   async function onSubmitDetails(e: FormEvent) {
     e.preventDefault();
     const u = username.trim();
@@ -49,12 +63,8 @@ function RegisterPage() {
       toast.error("Username must be 3–32 chars: letters, numbers, _ or .");
       return;
     }
-    if (password.length < 8) {
-      toast.error("Password must be at least 8 characters");
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
+    if (!allPwOk) {
+      toast.error("Password does not meet all requirements");
       return;
     }
 
@@ -216,7 +226,21 @@ function RegisterPage() {
               />
             </div>
 
-            <Button type="submit" disabled={submitting} className="w-full">
+            <ul className="space-y-1 text-xs">
+              {pwRules.map((r) => (
+                <li
+                  key={r.label}
+                  className={
+                    r.ok ? "text-sys-cyan" : "text-sys-muted"
+                  }
+                >
+                  <span className="inline-block w-4">{r.ok ? "✓" : "○"}</span>
+                  {r.label}
+                </li>
+              ))}
+            </ul>
+
+            <Button type="submit" disabled={submitting || !allPwOk} className="w-full">
               {submitting ? "Creating…" : "Create account"}
             </Button>
 
