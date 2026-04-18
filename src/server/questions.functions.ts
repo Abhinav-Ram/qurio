@@ -145,20 +145,23 @@ interface UpdateQuestionInput {
   vector: string;
   text: string;
   followUps: string[];
+  accessToken: string;
 }
 
 export const updateQuestion = createServerFn({ method: "POST" })
   .inputValidator((data: UpdateQuestionInput) => {
     if (!data?.id) throw new Error("id required");
+    if (!data?.accessToken) throw new Error("Not authenticated");
     return {
       id: data.id,
       vector: (data.vector ?? "").slice(0, 80),
       text: (data.text ?? "").slice(0, 1000),
       followUps: (data.followUps ?? []).slice(0, 5).map((s) => String(s).slice(0, 300)),
+      accessToken: data.accessToken,
     };
   })
   .handler(async ({ data }) => {
-    const { error } = await getSupabase()
+    const { error } = await getUserSupabase(data.accessToken)
       .from("interview_questions")
       .update({
         vector: data.vector,
