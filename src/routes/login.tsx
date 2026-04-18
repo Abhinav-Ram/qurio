@@ -1,10 +1,11 @@
-import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { isLoggedIn, login } from "@/lib/auth";
+import { isLoggedIn } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: () => {
@@ -12,24 +13,49 @@ export const Route = createFileRoute("/login")({
   },
   component: LoginPage,
   head: () => ({
-    meta: [{ title: "Sign In — Interview Intelligence" }],
+    meta: [{ title: "Sign in — Interview Intelligence" }],
   }),
 });
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const onSubmit = (e: FormEvent) => {
+  async function resolveEmail(input: string): Promise<string | null> {
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+    // If it already looks like an email, use it directly.
+    if (trimmed.includes("@")) return trimmed.toLowerCase();
+    // Otherwise look it up via the username.
+    const { data, error } = await supabase.rpc("lookup_email_by_identifier", {
+      identifier: trimmed,
+    });
+    if (error) {
+      console.error("lookup_email_by_identifier failed", error);
+      return null;
+    }
+    return (data as string | null) ?? null;
+  }
+
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    if (login(username.trim(), password)) {
+    try {
+      const email = await resolveEmail(identifier);
+      if (!email) {
+        toast.error("No account found with that username or email");
+        return;
+      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
       toast.success("Signed in");
       navigate({ to: "/dashboard" });
-    } else {
-      toast.error("Invalid credentials");
+    } finally {
       setSubmitting(false);
     }
   };
@@ -42,20 +68,20 @@ function LoginPage() {
       >
         <div className="space-y-1">
           <p className="font-mono text-[11px] tracking-widest text-sys-cyan uppercase">
-            Interviewer Console
+            Interviewer console
           </p>
           <h1 className="text-xl font-semibold">Sign in</h1>
-          <p className="text-xs text-sys-muted">Use admin / admin for now.</p>
+          <p className="text-xs text-sys-muted">Use your username or email.</p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="username" className="text-xs uppercase tracking-wider">
-            Username
+          <Label htmlFor="identifier" className="text-xs uppercase tracking-wider">
+            Username or email
           </Label>
           <Input
-            id="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            id="identifier"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             autoComplete="username"
             autoFocus
             required
@@ -63,9 +89,17 @@ function LoginPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-xs uppercase tracking-wider">
-            Password
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password" className="text-xs uppercase tracking-wider">
+              Password
+            </Label>
+            <Link
+              to="/forgot-password"
+              className="text-xs text-sys-cyan hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <Input
             id="password"
             type="password"
@@ -79,6 +113,13 @@ function LoginPage() {
         <Button type="submit" disabled={submitting} className="w-full">
           {submitting ? "Signing in…" : "Sign in"}
         </Button>
+
+        <p className="text-xs text-center text-sys-muted">
+          Don't have an account?{" "}
+          <Link to="/register" className="text-sys-cyan hover:underline">
+            Create one
+          </Link>
+        </p>
       </form>
     </div>
   );
