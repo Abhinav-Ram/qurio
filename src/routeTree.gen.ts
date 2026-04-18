@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ISlugRouteImport } from './routes/i.$slug'
 import { Route as ContextsNewRouteImport } from './routes/contexts.new'
 import { Route as ContextsIdRouteImport } from './routes/contexts.$id'
 
@@ -28,6 +29,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ISlugRoute = ISlugRouteImport.update({
+  id: '/i/$slug',
+  path: '/i/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContextsNewRoute = ContextsNewRouteImport.update({
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/contexts/$id': typeof ContextsIdRoute
   '/contexts/new': typeof ContextsNewRoute
+  '/i/$slug': typeof ISlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/contexts/$id': typeof ContextsIdRoute
   '/contexts/new': typeof ContextsNewRoute
+  '/i/$slug': typeof ISlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,12 +70,25 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/contexts/$id': typeof ContextsIdRoute
   '/contexts/new': typeof ContextsNewRoute
+  '/i/$slug': typeof ISlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/login' | '/contexts/$id' | '/contexts/new'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/contexts/$id'
+    | '/contexts/new'
+    | '/i/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/contexts/$id' | '/contexts/new'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/contexts/$id'
+    | '/contexts/new'
+    | '/i/$slug'
   id:
     | '__root__'
     | '/'
@@ -75,6 +96,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/contexts/$id'
     | '/contexts/new'
+    | '/i/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -83,6 +105,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ContextsIdRoute: typeof ContextsIdRoute
   ContextsNewRoute: typeof ContextsNewRoute
+  ISlugRoute: typeof ISlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -108,6 +131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/i/$slug': {
+      id: '/i/$slug'
+      path: '/i/$slug'
+      fullPath: '/i/$slug'
+      preLoaderRoute: typeof ISlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contexts/new': {
       id: '/contexts/new'
       path: '/contexts/new'
@@ -131,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ContextsIdRoute: ContextsIdRoute,
   ContextsNewRoute: ContextsNewRoute,
+  ISlugRoute: ISlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

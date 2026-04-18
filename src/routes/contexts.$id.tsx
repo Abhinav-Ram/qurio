@@ -1,6 +1,17 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ArrowLeft, Edit2, Check, X, Sparkles, Share2, Copy, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowLeft,
+  Edit2,
+  Check,
+  X,
+  Sparkles,
+  Share2,
+  Copy,
+  Loader2,
+  Inbox,
+  ListChecks,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
@@ -48,6 +59,13 @@ type QuestionRow = {
   position: number;
 };
 
+type ResponseRow = {
+  id: string;
+  respondent_name: string;
+  submitted_at: string;
+  answers: { questionId: string; answer: string }[];
+};
+
 function ContextWorkspace() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
@@ -60,6 +78,8 @@ function ContextWorkspace() {
   const [shareOpen, setShareOpen] = useState(false);
   const [shareSlug, setShareSlug] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [tab, setTab] = useState<"questions" | "responses">("questions");
+  const [responses, setResponses] = useState<ResponseRow[] | null>(null);
 
   // Load context + existing questions
   useEffect(() => {
@@ -99,6 +119,38 @@ function ContextWorkspace() {
       active = false;
     };
   }, [id, navigate]);
+
+  // Load responses when switching to the responses tab
+  useEffect(() => {
+    if (tab !== "responses" || !ctx) return;
+    let active = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("interview_responses")
+        .select("id,respondent_name,submitted_at,answers")
+        .eq("context_id", ctx.id)
+        .order("submitted_at", { ascending: false });
+      if (!active) return;
+      if (error) {
+        toast.error(error.message);
+        setResponses([]);
+        return;
+      }
+      setResponses(
+        (data ?? []).map((r) => ({
+          id: r.id,
+          respondent_name: r.respondent_name ?? "",
+          submitted_at: r.submitted_at,
+          answers: Array.isArray(r.answers)
+            ? (r.answers as { questionId: string; answer: string }[])
+            : [],
+        })),
+      );
+    })();
+    return () => {
+      active = false;
+    };
+  }, [tab, ctx]);
 
   // Auto-generate if redirected here with ?autogen=1 and no questions yet
   useEffect(() => {
@@ -193,55 +245,83 @@ function ContextWorkspace() {
 
         {/* Main */}
         <main className="p-5 md:p-8 max-w-3xl w-full mx-auto">
-          <div className="flex items-end justify-between gap-3 flex-wrap mb-6">
+          <div className="flex items-end justify-between gap-3 flex-wrap mb-4">
             <div>
-              <h1 className="text-2xl font-semibold">Interview questions</h1>
+              <h1 className="text-2xl font-semibold">
+                {tab === "questions" ? "Interview questions" : "Responses"}
+              </h1>
               <p className="text-sm text-sys-muted">
-                Review the AI-generated probes, edit anything, then share with your interviewee.
+                {tab === "questions"
+                  ? "Review the AI-generated probes, edit anything, then share with your interviewee."
+                  : "Each interviewee's answers, listed in the order the questions were asked."}
               </p>
             </div>
             <div className="flex gap-2">
-              {questions.length > 0 && (
+              {tab === "questions" && questions.length > 0 && (
                 <Button variant="outline" onClick={runGenerate} disabled={generating}>
                   <Sparkles className="size-4" />
                   Regenerate
                 </Button>
               )}
-              <Button onClick={openShare} disabled={questions.length === 0 || generating}>
-                <Share2 className="size-4" />
-                Save & share
-              </Button>
+              {tab === "questions" && (
+                <Button onClick={openShare} disabled={questions.length === 0 || generating}>
+                  <Share2 className="size-4" />
+                  Save & share
+                </Button>
+              )}
             </div>
           </div>
 
-          {generating ? (
-            <div className="border border-dashed border-border rounded-lg p-12 text-center">
-              <Loader2 className="size-6 mx-auto animate-spin text-sys-cyan mb-3" />
-              <p className="text-sm text-sys-muted font-mono uppercase tracking-widest">
-                Drafting probe sequence…
-              </p>
-            </div>
-          ) : questions.length === 0 ? (
-            <div className="border border-dashed border-border rounded-lg p-10 text-center">
-              <p className="text-sm text-sys-muted mb-4">No questions yet.</p>
-              <Button onClick={runGenerate}>
-                <Sparkles className="size-4" />
-                Generate questions
-              </Button>
-            </div>
+          {/* Tabs */}
+          <div className="flex gap-1 border-b border-border mb-6 -mx-1">
+            <TabButton
+              active={tab === "questions"}
+              onClick={() => setTab("questions")}
+              icon={<ListChecks className="size-3.5" />}
+              label="Questions"
+              count={questions.length}
+            />
+            <TabButton
+              active={tab === "responses"}
+              onClick={() => setTab("responses")}
+              icon={<Inbox className="size-3.5" />}
+              label="Responses"
+              count={responses?.length ?? null}
+            />
+          </div>
+
+          {tab === "questions" ? (
+            generating ? (
+              <div className="border border-dashed border-border rounded-lg p-12 text-center">
+                <Loader2 className="size-6 mx-auto animate-spin text-sys-cyan mb-3" />
+                <p className="text-sm text-sys-muted font-mono uppercase tracking-widest">
+                  Drafting probe sequence…
+                </p>
+              </div>
+            ) : questions.length === 0 ? (
+              <div className="border border-dashed border-border rounded-lg p-10 text-center">
+                <p className="text-sm text-sys-muted mb-4">No questions yet.</p>
+                <Button onClick={runGenerate}>
+                  <Sparkles className="size-4" />
+                  Generate questions
+                </Button>
+              </div>
+            ) : (
+              <ul className="space-y-4">
+                {questions.map((q, idx) => (
+                  <QuestionCard
+                    key={q.id}
+                    index={idx}
+                    question={q}
+                    onSaved={(updated) =>
+                      setQuestions((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+                    }
+                  />
+                ))}
+              </ul>
+            )
           ) : (
-            <ul className="space-y-4">
-              {questions.map((q, idx) => (
-                <QuestionCard
-                  key={q.id}
-                  index={idx}
-                  question={q}
-                  onSaved={(updated) =>
-                    setQuestions((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
-                  }
-                />
-              ))}
-            </ul>
+            <ResponsesPanel responses={responses} questions={questions} />
           )}
         </main>
       </div>
@@ -251,7 +331,8 @@ function ContextWorkspace() {
           <DialogHeader>
             <DialogTitle>Short link to interview</DialogTitle>
             <DialogDescription>
-              Share this link with the interviewee. The form for them is coming next.
+              Share this link with the interviewee. Their answers will appear under the
+              Responses tab as they submit.
             </DialogDescription>
           </DialogHeader>
 
@@ -421,5 +502,121 @@ function QuestionCard({
         </div>
       )}
     </li>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  icon,
+  label,
+  count,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  count: number | null;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 px-3 py-2 text-xs font-mono uppercase tracking-widest border-b-2 transition-colors ${
+        active
+          ? "border-sys-cyan text-sys-text"
+          : "border-transparent text-sys-muted hover:text-sys-text"
+      }`}
+    >
+      {icon}
+      {label}
+      {count !== null && (
+        <span className="text-[10px] text-sys-muted">({count})</span>
+      )}
+    </button>
+  );
+}
+
+function ResponsesPanel({
+  responses,
+  questions,
+}: {
+  responses: ResponseRow[] | null;
+  questions: QuestionRow[];
+}) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const questionMap = useMemo(() => {
+    const m = new Map<string, { text: string; index: number }>();
+    questions.forEach((q, i) => m.set(q.id, { text: q.text, index: i }));
+    return m;
+  }, [questions]);
+
+  if (responses === null) {
+    return (
+      <div className="text-sm text-sys-muted font-mono py-8 text-center">
+        Loading responses…
+      </div>
+    );
+  }
+  if (responses.length === 0) {
+    return (
+      <div className="border border-dashed border-border rounded-lg p-10 text-center">
+        <Inbox className="size-8 mx-auto text-sys-muted mb-3" />
+        <p className="text-sm text-sys-muted">
+          No responses yet. Share your link to start collecting answers.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="space-y-3">
+      {responses.map((r) => {
+        const open = openId === r.id;
+        return (
+          <li key={r.id} className="bg-card border border-border rounded-lg overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setOpenId(open ? null : r.id)}
+              className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-card/60 transition-colors"
+            >
+              <div className="min-w-0">
+                <p className="font-semibold truncate">
+                  {r.respondent_name || "Anonymous"}
+                </p>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-sys-muted">
+                  {new Date(r.submitted_at).toLocaleString()} · {r.answers.length} answers
+                </p>
+              </div>
+              <span className="text-xs text-sys-cyan font-mono">
+                {open ? "− Hide" : "+ View"}
+              </span>
+            </button>
+            {open && (
+              <div className="border-t border-border p-4 space-y-4">
+                {r.answers.map((a, i) => {
+                  const q = questionMap.get(a.questionId);
+                  return (
+                    <div key={i}>
+                      <p className="font-mono text-[10px] uppercase tracking-widest text-sys-muted mb-1">
+                        Q.{String((q?.index ?? i) + 1).padStart(2, "0")}
+                      </p>
+                      <p className="text-sm font-medium mb-1">
+                        {q?.text ?? "(question removed)"}
+                      </p>
+                      <p className="text-sm text-sys-muted whitespace-pre-wrap">
+                        {a.answer.trim() || (
+                          <span className="italic text-sys-amber">— skipped —</span>
+                        )}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
