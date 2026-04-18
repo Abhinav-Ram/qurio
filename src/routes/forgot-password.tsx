@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { isLoggedIn } from "@/lib/auth";
-import { resetPasswordByUsername } from "@/server/auth.functions";
+import { resetPasswordByUsername, checkUsernameExists } from "@/server/auth.functions";
 
 export const Route = createFileRoute("/forgot-password")({
   beforeLoad: () => {
@@ -52,15 +52,29 @@ function ForgotPasswordPage() {
   ];
   const allPwOk = pwRules.every((r) => r.ok);
 
-  function onSubmitUsername(e: FormEvent) {
+  const [checking, setChecking] = useState(false);
+
+  async function onSubmitUsername(e: FormEvent) {
     e.preventDefault();
     const u = username.trim();
     if (!USERNAME_RE.test(u)) {
       toast.error("Enter a valid username");
       return;
     }
-    setUsername(u);
-    setConfirmOpen(true);
+    setChecking(true);
+    try {
+      const res = await checkUsernameExists({ data: { username: u } });
+      if (!res.exists) {
+        toast.error("No account found with that username");
+        return;
+      }
+      setUsername(u);
+      setConfirmOpen(true);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Lookup failed");
+    } finally {
+      setChecking(false);
+    }
   }
 
   async function onSubmitNewPassword(e: FormEvent) {
@@ -120,8 +134,8 @@ function ForgotPasswordPage() {
               />
             </div>
 
-            <Button type="submit" className="w-full">
-              Continue
+            <Button type="submit" disabled={checking} className="w-full">
+              {checking ? "Checking…" : "Continue"}
             </Button>
 
             <p className="text-xs text-center text-sys-muted">
