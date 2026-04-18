@@ -11,6 +11,7 @@ import {
   Loader2,
   Inbox,
   ListChecks,
+  FlaskConical,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/AppHeader";
@@ -32,6 +33,8 @@ import {
   updateQuestion,
   ensureShareSlug,
 } from "@/server/questions.functions";
+import type { AnalysisReport } from "@/server/analysis.functions";
+import { AnalysisPanel } from "@/components/AnalysisPanel";
 
 export const Route = createFileRoute("/contexts/$id")({
   beforeLoad: () => {
@@ -49,6 +52,7 @@ type ContextRow = {
   context: string;
   hypothesis: string;
   share_slug: string | null;
+  analysis: AnalysisReport | null;
 };
 
 type QuestionRow = {
