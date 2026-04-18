@@ -1,6 +1,17 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ArrowLeft, Edit2, Check, X, Sparkles, Share2, Copy, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowLeft,
+  Edit2,
+  Check,
+  X,
+  Sparkles,
+  Share2,
+  Copy,
+  Loader2,
+  Inbox,
+  ListChecks,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
