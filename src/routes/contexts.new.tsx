@@ -50,7 +50,7 @@ function NewContextPage() {
     }
     toast.success("Context saved");
     navigate({
-      to: "/contexts/$id/review",
+      to: "/contexts/$id",
       params: { id: data.id },
       search: { autogen: "1" },
     });
