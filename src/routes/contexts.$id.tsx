@@ -318,7 +318,10 @@ function ContextWorkspace() {
                     }
                   />
                 ))}
-            </ul>
+              </ul>
+            )
+          ) : (
+            <ResponsesPanel responses={responses} questions={questions} />
           )}
         </main>
       </div>
