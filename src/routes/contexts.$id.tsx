@@ -278,7 +278,7 @@ function ContextWorkspace() {
               {tab === "questions" && (
                 <Button onClick={openShare} disabled={questions.length === 0 || generating}>
                   <Share2 className="size-4" />
-                  {shareSlug ? "Share link" : "Save & share"}
+                  {shareSlug ? "Share link" : "Save"}
                 </Button>
               )}
             </div>
