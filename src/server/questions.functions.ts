@@ -37,7 +37,7 @@ export const generateQuestionsForContext = createServerFn({ method: "POST" })
     return { contextId: data.contextId };
   })
   .handler(async ({ data }) => {
-    const { data: ctx, error: ctxErr } = await supabaseAdmin
+    const { data: ctx, error: ctxErr } = await getSupabase()
       .from("interview_contexts")
       .select("id,context,hypothesis")
       .eq("id", data.contextId)
@@ -131,7 +131,7 @@ ${ctx.hypothesis ? `HYPOTHESIS UNDER TEST:\n${ctx.hypothesis}` : "NO EXPLICIT HY
     };
 
     // Replace existing questions for this context
-    await supabaseAdmin.from("interview_questions").delete().eq("context_id", data.contextId);
+    await getSupabase().from("interview_questions").delete().eq("context_id", data.contextId);
 
     const rows = parsed.questions.map((q, i) => ({
       context_id: data.contextId,
@@ -141,7 +141,7 @@ ${ctx.hypothesis ? `HYPOTHESIS UNDER TEST:\n${ctx.hypothesis}` : "NO EXPLICIT HY
       position: i,
     }));
 
-    const { data: inserted, error: insErr } = await supabaseAdmin
+    const { data: inserted, error: insErr } = await getSupabase()
       .from("interview_questions")
       .insert(rows)
       .select("id,vector,text,follow_ups,position")
@@ -169,7 +169,7 @@ export const updateQuestion = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }) => {
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabase()
       .from("interview_questions")
       .update({
         vector: data.vector,
@@ -195,7 +195,7 @@ export const ensureShareSlug = createServerFn({ method: "POST" })
     return { contextId: data.contextId };
   })
   .handler(async ({ data }) => {
-    const { data: existing, error: selErr } = await supabaseAdmin
+    const { data: existing, error: selErr } = await getSupabase()
       .from("interview_contexts")
       .select("share_slug")
       .eq("id", data.contextId)
@@ -206,7 +206,7 @@ export const ensureShareSlug = createServerFn({ method: "POST" })
     // Try a few times in the very rare collision case
     for (let attempt = 0; attempt < 5; attempt++) {
       const slug = randomSlug(8);
-      const { error: updErr } = await supabaseAdmin
+      const { error: updErr } = await getSupabase()
         .from("interview_contexts")
         .update({ share_slug: slug })
         .eq("id", data.contextId);
