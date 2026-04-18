@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { questionsPrompt, AI_GATEWAY_URL, getAIApiKey } from "./prompts";
 
 function getSupabase() {
@@ -11,17 +12,20 @@ interface GenerateInput {
 }
 
 export const generateQuestionsForContext = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: GenerateInput) => {
     if (!data?.contextId || typeof data.contextId !== "string") {
       throw new Error("contextId required");
     }
     return { contextId: data.contextId };
   })
-  .handler(async ({ data }) => {
-    const { data: ctx, error: ctxErr } = await getSupabase()
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase;
+    const { data: ctx, error: ctxErr } = await sb
       .from("interview_contexts")
-      .select("id,context,hypothesis")
+      .select("id,context,hypothesis,owner_id")
       .eq("id", data.contextId)
+      .eq("owner_id", context.userId)
       .maybeSingle();
     if (ctxErr) throw new Error(ctxErr.message);
     if (!ctx) throw new Error("Context not found");
