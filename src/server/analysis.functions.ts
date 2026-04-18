@@ -269,21 +269,37 @@ export const generateAnalysis = createServerFn({ method: "POST" })
       tool_choice: { type: "function", function: { name: "emit_analysis" } },
     };
 
-    const res = await fetch(AI_GATEWAY_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${getAIApiKey()}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-    if (res.status === 429) throw new Error("Rate limit reached. Please wait and retry.");
-    if (res.status === 402)
-      throw new Error("AI credits exhausted. Add credits in Settings → Workspace → Usage.");
-    if (!res.ok) {
-      const txt = await res.text();
-      console.error("AI gateway error", res.status, txt);
-      throw new Error("AI analysis failed.");
+    const callGateway = async (modelOverride?: string) => {
+      const payload = modelOverride ? { ...body, model: modelOverride } : body;
+      return fetch(AI_GATEWAY_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getAIApiKey()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    };
+
+    // Retry on transient upstream errors (502/503/504), then fall back to flash.
+    const attempts: Array<string | undefined> = [undefined, undefined, "google/gemini-2.5-flash"];
+    let res: Response | undefined;
+    let lastBody = "";
+    for (let i = 0; i < attempts.length; i++) {
+      res = await callGateway(attempts[i]);
+      if (res.status === 429) throw new Error("Rate limit reached. Please wait and retry.");
+      if (res.status === 402)
+        throw new Error("AI credits exhausted. Add credits in Settings → Workspace → Usage.");
+      if (res.ok) break;
+      lastBody = await res.text();
+      console.error("AI gateway error", res.status, "attempt", i + 1, lastBody.slice(0, 200));
+      if (![502, 503, 504, 522, 524].includes(res.status)) break;
+      await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+    }
+    if (!res || !res.ok) {
+      throw new Error(
+        `AI analysis failed (gateway ${res?.status ?? "no-response"}). Please retry in a moment.`
+      );
     }
 
     const json = await res.json();
