@@ -182,28 +182,33 @@ function randomSlug(len = 8): string {
 }
 
 export const ensureShareSlug = createServerFn({ method: "POST" })
-  .inputValidator((data: { contextId: string }) => {
+  .inputValidator((data: { contextId: string; accessToken: string }) => {
     if (!data?.contextId) throw new Error("contextId required");
-    return { contextId: data.contextId };
+    if (!data?.accessToken) throw new Error("Not authenticated");
+    return { contextId: data.contextId, accessToken: data.accessToken };
   })
   .handler(async ({ data }) => {
-    const { data: existing, error: selErr } = await getSupabase()
+    const sb = getUserSupabase(data.accessToken);
+    const { data: existing, error: selErr } = await sb
       .from("interview_contexts")
       .select("share_slug")
       .eq("id", data.contextId)
       .maybeSingle();
     if (selErr) throw new Error(selErr.message);
-    if (existing?.share_slug) return { slug: existing.share_slug };
+    if (!existing) throw new Error("Context not found");
+    if (existing.share_slug) return { slug: existing.share_slug };
 
     // Try a few times in the very rare collision case
     for (let attempt = 0; attempt < 5; attempt++) {
       const slug = randomSlug(8);
-      const { error: updErr } = await getSupabase()
+      const { data: updated, error: updErr } = await sb
         .from("interview_contexts")
         .update({ share_slug: slug })
-        .eq("id", data.contextId);
-      if (!updErr) return { slug };
-      if (!String(updErr.message).toLowerCase().includes("unique")) {
+        .eq("id", data.contextId)
+        .select("share_slug")
+        .maybeSingle();
+      if (!updErr && updated?.share_slug === slug) return { slug };
+      if (updErr && !String(updErr.message).toLowerCase().includes("unique")) {
         throw new Error(updErr.message);
       }
     }
