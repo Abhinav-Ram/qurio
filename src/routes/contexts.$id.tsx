@@ -331,7 +331,8 @@ function ContextWorkspace() {
           <DialogHeader>
             <DialogTitle>Short link to interview</DialogTitle>
             <DialogDescription>
-              Share this link with the interviewee. The form for them is coming next.
+              Share this link with the interviewee. Their answers will appear under the
+              Responses tab as they submit.
             </DialogDescription>
           </DialogHeader>
 
