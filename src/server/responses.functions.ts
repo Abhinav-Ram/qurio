@@ -95,8 +95,14 @@ export const submitInterviewResponse = createServerFn({ method: "POST" })
       .select("id")
       .eq("share_slug", data.slug)
       .maybeSingle();
-    if (ctxErr) throw new Error(ctxErr.message);
-    if (!ctx) throw new Error("Interview not found");
+    if (ctxErr) {
+      console.error("submitInterviewResponse: lookup error", { slug: data.slug, error: ctxErr.message });
+      throw new Error(ctxErr.message);
+    }
+    if (!ctx) {
+      console.error("submitInterviewResponse: no context for slug", { slug: data.slug });
+      throw new Error("Interview not found");
+    }
 
     const { error: insErr } = await sb.from("interview_responses").insert({
       context_id: ctx.id,
