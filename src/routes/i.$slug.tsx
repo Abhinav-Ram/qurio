@@ -148,6 +148,8 @@ function InterviewForm() {
             },
           });
           if (decision.needed && decision.question && decision.source) {
+            const followQuestion = decision.question;
+            const followSource: "prepared" | "fresh" = decision.source;
             setAnswers((prev) => ({
               ...prev,
               [currentQuestion.id]: {
@@ -155,9 +157,9 @@ function InterviewForm() {
                 answer: text,
                 decidedFor: text,
                 followUp: {
-                  question: decision.question!,
+                  question: followQuestion,
                   answer: prev[currentQuestion.id]?.followUp?.answer ?? "",
-                  source: decision.source,
+                  source: followSource,
                 },
               },
             }));
