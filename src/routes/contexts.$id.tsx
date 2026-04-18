@@ -269,7 +269,7 @@ function ContextWorkspace() {
               </p>
             </div>
             <div className="flex gap-2">
-              {tab === "questions" && questions.length > 0 && (
+              {tab === "questions" && questions.length > 0 && !shareSlug && (
                 <Button variant="outline" onClick={runGenerate} disabled={generating}>
                   <Sparkles className="size-4" />
                   Regenerate
@@ -278,7 +278,7 @@ function ContextWorkspace() {
               {tab === "questions" && (
                 <Button onClick={openShare} disabled={questions.length === 0 || generating}>
                   <Share2 className="size-4" />
-                  Save & share
+                  {shareSlug ? "Share link" : "Save & share"}
                 </Button>
               )}
             </div>
@@ -332,6 +332,7 @@ function ContextWorkspace() {
                     key={q.id}
                     index={idx}
                     question={q}
+                    locked={!!shareSlug}
                     onSaved={(updated) =>
                       setQuestions((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
                     }
@@ -390,10 +391,12 @@ function ContextWorkspace() {
 function QuestionCard({
   index,
   question,
+  locked,
   onSaved,
 }: {
   index: number;
   question: QuestionRow;
+  locked?: boolean;
   onSaved: (q: QuestionRow) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -444,7 +447,7 @@ function QuestionCard({
             <span className="text-sys-cyan">// {question.vector}</span>
           )}
         </div>
-        {!editing ? (
+        {locked ? null : !editing ? (
           <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
             <Edit2 className="size-3" /> Edit
           </Button>
