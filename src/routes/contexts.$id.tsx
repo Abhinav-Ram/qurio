@@ -423,12 +423,16 @@ function QuestionCard({
   async function save() {
     setSaving(true);
     try {
+      const { data: sess } = await supabase.auth.getSession();
+      const accessToken = sess.session?.access_token;
+      if (!accessToken) throw new Error("Not authenticated");
       await updateQuestion({
         data: {
           id: question.id,
           vector: vector.trim(),
           text: text.trim(),
           followUps: followUps.map((s) => s.trim()).filter(Boolean),
+          accessToken,
         },
       });
       onSaved({
