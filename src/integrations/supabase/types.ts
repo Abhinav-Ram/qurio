@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           hypothesis: string
           id: string
+          share_slug: string | null
           title: string
           updated_at: string
         }
@@ -28,6 +29,7 @@ export type Database = {
           created_at?: string
           hypothesis?: string
           id?: string
+          share_slug?: string | null
           title?: string
           updated_at?: string
         }
@@ -36,10 +38,52 @@ export type Database = {
           created_at?: string
           hypothesis?: string
           id?: string
+          share_slug?: string | null
           title?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      interview_questions: {
+        Row: {
+          context_id: string
+          created_at: string
+          follow_ups: Json
+          id: string
+          position: number
+          text: string
+          updated_at: string
+          vector: string
+        }
+        Insert: {
+          context_id: string
+          created_at?: string
+          follow_ups?: Json
+          id?: string
+          position?: number
+          text?: string
+          updated_at?: string
+          vector?: string
+        }
+        Update: {
+          context_id?: string
+          created_at?: string
+          follow_ups?: Json
+          id?: string
+          position?: number
+          text?: string
+          updated_at?: string
+          vector?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_questions_context_id_fkey"
+            columns: ["context_id"]
+            isOneToOne: false
+            referencedRelation: "interview_contexts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
