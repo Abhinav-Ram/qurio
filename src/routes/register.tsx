@@ -40,6 +40,20 @@ function RegisterPage() {
   const [verifying, setVerifying] = useState(false);
   const [resending, setResending] = useState(false);
 
+  // Password rule checks (live)
+  const pwRules = [
+    { label: "At least 8 characters", ok: password.length >= 8 },
+    { label: "One uppercase letter (A–Z)", ok: /[A-Z]/.test(password) },
+    { label: "One lowercase letter (a–z)", ok: /[a-z]/.test(password) },
+    { label: "One number (0–9)", ok: /[0-9]/.test(password) },
+    { label: "One symbol (!@#$…)", ok: /[^A-Za-z0-9]/.test(password) },
+    {
+      label: "Matches confirmation",
+      ok: password.length > 0 && password === confirmPassword,
+    },
+  ];
+  const allPwOk = pwRules.every((r) => r.ok);
+
   async function onSubmitDetails(e: FormEvent) {
     e.preventDefault();
     const u = username.trim();
