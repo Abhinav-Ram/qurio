@@ -47,35 +47,35 @@
 }
 
 :root {
-  --radius: 0.375rem;
+  --radius: 0.5rem;
 
-  /* Tactical signal — dark green operations interface */
-  --sys-bg: oklch(0.16 0.015 155);
-  --sys-panel: oklch(0.19 0.02 155);
-  --sys-grid: oklch(0.27 0.035 155);
-  --sys-text: oklch(0.94 0.02 155);
-  --sys-muted: oklch(0.58 0.04 150);
-  --sys-cyan: oklch(0.85 0.16 195);
+  /* Light, calm palette — accent used sparingly */
+  --sys-bg: oklch(1 0 0);                  /* #FFFFFF */
+  --sys-panel: oklch(0.985 0 0);           /* #FAFAFA */
+  --sys-grid: oklch(0.928 0.004 286);      /* #E5E7EB border */
+  --sys-text: oklch(0.16 0 0);             /* #111111 */
+  --sys-muted: oklch(0.5 0.02 256);        /* #6B7280 */
+  --sys-cyan: oklch(0.546 0.215 262);      /* #2563EB accent blue */
   --sys-amber: oklch(0.82 0.16 75);
-  --sys-red: oklch(0.68 0.22 15);
-  --sys-green: oklch(0.78 0.18 150);
+  --sys-red: oklch(0.36 0.12 25);          /* #7F1D1D supporting text-red */
+  --sys-green: oklch(0.34 0.09 145);       /* #1B5E20 supporting text-green */
 
   --background: var(--sys-bg);
   --foreground: var(--sys-text);
   --card: var(--sys-panel);
   --card-foreground: var(--sys-text);
-  --popover: var(--sys-panel);
+  --popover: var(--sys-bg);
   --popover-foreground: var(--sys-text);
   --primary: var(--sys-cyan);
-  --primary-foreground: var(--sys-bg);
-  --secondary: var(--sys-grid);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.961 0.003 286);     /* #F3F4F6 */
   --secondary-foreground: var(--sys-text);
-  --muted: var(--sys-grid);
+  --muted: oklch(0.961 0.003 286);         /* #F3F4F6 */
   --muted-foreground: var(--sys-muted);
-  --accent: var(--sys-grid);
+  --accent: oklch(0.961 0.003 286);
   --accent-foreground: var(--sys-text);
-  --destructive: var(--sys-red);
-  --destructive-foreground: var(--sys-text);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(1 0 0);
   --border: var(--sys-grid);
   --input: var(--sys-grid);
   --ring: var(--sys-cyan);
@@ -95,15 +95,11 @@
   }
 
   body {
-    background-image:
-      linear-gradient(to right, var(--color-sys-grid) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--color-sys-grid) 1px, transparent 1px);
-    background-size: 2rem 2rem;
     min-height: 100dvh;
   }
 
   ::selection {
-    background-color: color-mix(in oklab, var(--color-sys-cyan) 30%, transparent);
+    background-color: color-mix(in oklab, var(--color-sys-cyan) 25%, transparent);
     color: var(--color-sys-text);
   }
 }
