@@ -148,6 +148,16 @@ function PricingCard({ tier }: { tier: Tier }) {
         ))}
       </ul>
 
+      <div className="mt-8">
+        <Button
+          type="button"
+          className="w-full"
+          variant={tier.highlighted ? "default" : "outline"}
+        >
+          {tier.cta}
+          <ArrowRight className="size-4" />
+        </Button>
+      </div>
     </div>
   );
 }
