@@ -13,7 +13,7 @@ export const Route = createFileRoute("/register")({
   },
   component: RegisterPage,
   head: () => ({
-    meta: [{ title: "Create account — Interview Intelligence" }],
+    meta: [{ title: "Create account — QURIO" }],
   }),
 });
 

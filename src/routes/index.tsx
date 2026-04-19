@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Interview Intelligence — Evidence-backed qualitative reasoning" },
+      { title: "QURIO — Evidence-backed qualitative reasoning" },
       {
         name: "description",
         content:
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
       },
       {
         property: "og:title",
-        content: "Interview Intelligence — Evidence-backed qualitative reasoning",
+        content: "QURIO — Evidence-backed qualitative reasoning",
       },
       {
         property: "og:description",
@@ -61,7 +61,7 @@ function SiteHeader() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link to="/" className="flex items-baseline gap-3">
           <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-sys-cyan">
-            Interview.Intel
+            QURIO
           </span>
           <span className="hidden text-xs text-sys-muted sm:inline">
             Evidence-backed reasoning
@@ -297,7 +297,7 @@ function SiteFooter() {
     <footer className="border-t border-border">
       <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-6 py-8 sm:flex-row sm:items-center">
         <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-sys-muted">
-          Interview.Intel — Evidence over intuition
+          QURIO — Evidence over intuition
         </span>
         <div className="flex items-center gap-4 text-xs text-sys-muted">
           <Link to="/login" className="hover:text-sys-text">

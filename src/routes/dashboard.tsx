@@ -23,7 +23,7 @@ export const Route = createFileRoute("/dashboard")({
   },
   component: DashboardPage,
   head: () => ({
-    meta: [{ title: "Dashboard — Interview Intelligence" }],
+    meta: [{ title: "Dashboard — QURIO" }],
   }),
 });
 

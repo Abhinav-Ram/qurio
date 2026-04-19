@@ -10,7 +10,7 @@ export function AppHeader() {
     <header className="flex items-center justify-between border-b border-border pb-3 mb-6">
       <Link to="/dashboard" className="flex items-baseline gap-3">
         <span className="font-mono text-[11px] tracking-widest text-sys-cyan uppercase">
-          Interview.Intel
+          QURIO
         </span>
         <span className="text-xs text-sys-muted">Interviewer console</span>
       </Link>
