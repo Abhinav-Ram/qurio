@@ -261,13 +261,10 @@ function FinalCta() {
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="lg">
-            <Link to="/register">
-              Create your account
+            <Link to="/login">
+              Go to App
               <ArrowRight className="size-4" />
             </Link>
-          </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link to="/login">Log in</Link>
           </Button>
         </div>
       </div>
