@@ -33,7 +33,7 @@ export const generateQuestionsForContext = createServerFn({ method: "POST" })
     const sb = getUserSupabase(data.accessToken);
     const { data: ctx, error: ctxErr } = await sb
       .from("interview_contexts")
-      .select("id,context,hypothesis,owner_id")
+      .select("id,title,context,hypothesis,owner_id")
       .eq("id", data.contextId)
       .maybeSingle();
     if (ctxErr) throw new Error(ctxErr.message);
@@ -41,6 +41,7 @@ export const generateQuestionsForContext = createServerFn({ method: "POST" })
 
     const systemPrompt = questionsPrompt.system;
     const userPrompt = questionsPrompt.user({
+      title: ctx.title,
       context: ctx.context,
       hypothesis: ctx.hypothesis,
     });
