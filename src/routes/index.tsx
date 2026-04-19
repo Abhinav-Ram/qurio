@@ -68,12 +68,9 @@ function SiteHeader() {
           </span>
         </Link>
         <nav className="flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/login">Log in</Link>
-          </Button>
           <Button asChild size="sm">
-            <Link to="/register">
-              Sign up
+            <Link to="/login">
+              Go to App
               <ArrowRight className="size-4" />
             </Link>
           </Button>
