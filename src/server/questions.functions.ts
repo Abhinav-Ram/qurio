@@ -73,7 +73,7 @@ export const generateQuestionsForContext = createServerFn({ method: "POST" })
                       followUps: {
                         type: "array",
                         minItems: 2,
-                        maxItems: 3,
+                        maxItems: 2,
                         items: { type: "string" },
                       },
                     },
