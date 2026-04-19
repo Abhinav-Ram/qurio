@@ -342,6 +342,9 @@ function ContextWorkspace() {
                 <p className="text-sm text-sys-muted font-mono uppercase tracking-widest">
                   Drafting probe sequence…
                 </p>
+                <p className="text-xs text-sys-muted mt-2">
+                  This can take 10–30 seconds. You can switch tabs — it keeps running.
+                </p>
               </div>
             ) : questions.length === 0 ? (
               <div className="border border-dashed border-border rounded-lg p-10 text-center">
