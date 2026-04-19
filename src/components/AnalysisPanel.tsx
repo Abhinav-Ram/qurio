@@ -6,11 +6,19 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { AnalysisReport } from "@/server/analysis.functions";
 import { analysisReportToMarkdown } from "@/lib/analysis-format";
+import { supabase } from "@/integrations/supabase/client";
 import {
   isAnalysisRunning,
   startAnalysis,
   subscribeAnalysis,
 } from "@/lib/analysis-jobs";
+
+async function getAccessToken(): Promise<string> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Not authenticated");
+  return token;
+}
 
 interface Props {
   contextId: string;
@@ -35,16 +43,17 @@ export function AnalysisPanel({ contextId, initial, hasResponses, onGenerated }:
   useEffect(() => {
     if (!isAnalysisRunning(contextId)) return;
     let active = true;
-    // Re-subscribe to result by starting (returns the existing promise).
-    startAnalysis(contextId)
-      .then((res) => {
+    (async () => {
+      try {
+        const token = await getAccessToken();
+        const res = await startAnalysis(contextId, token);
         if (!active) return;
         setAnalysis(res);
         onGenerated(res);
-      })
-      .catch(() => {
+      } catch {
         /* error already toasted by initiator */
-      });
+      }
+    })();
     return () => {
       active = false;
     };
@@ -56,7 +65,8 @@ export function AnalysisPanel({ contextId, initial, hasResponses, onGenerated }:
       return;
     }
     try {
-      const res = await startAnalysis(contextId);
+      const token = await getAccessToken();
+      const res = await startAnalysis(contextId, token);
       setAnalysis(res);
       onGenerated(res);
       toast.success("Analysis ready");

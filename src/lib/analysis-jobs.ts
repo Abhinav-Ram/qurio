@@ -31,13 +31,13 @@ export function subscribeAnalysis(contextId: string, listener: () => void): () =
   };
 }
 
-export function startAnalysis(contextId: string): Promise<AnalysisReport> {
+export function startAnalysis(contextId: string, accessToken: string): Promise<AnalysisReport> {
   const existing = jobs.get(contextId);
   if (existing) return existing.promise;
 
   const promise = (async () => {
     try {
-      const res = await generateAnalysis({ data: { contextId } });
+      const res = await generateAnalysis({ data: { contextId, accessToken } });
       if (!res.analysis) throw new Error(res.error ?? "Analysis failed");
       return res.analysis;
     } finally {
