@@ -323,5 +323,5 @@ export const generateAnalysis = createServerFn({ method: "POST" })
       .eq("id", data.contextId);
     if (updErr) throw new Error(updErr.message);
 
-    return { analysis: report };
+    return { analysis: report, error: null as string | null };
   });
