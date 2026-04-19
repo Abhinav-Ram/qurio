@@ -113,13 +113,10 @@ function Hero() {
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Button asChild size="lg">
-              <Link to="/register">
-                Get started
+              <Link to="/login">
+                Go to App
                 <ArrowRight className="size-4" />
               </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link to="/login">I already have an account</Link>
             </Button>
           </div>
         </div>
