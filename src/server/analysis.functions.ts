@@ -3,14 +3,13 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { analysisPrompt, AI_GATEWAY_URL, getAIApiKey } from "./prompts";
 
-function getSupabase() {
+function getUserSupabase(accessToken: string) {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_PUBLISHABLE_KEY ||
-    process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) throw new Error("Supabase env vars not configured on server.");
   return createClient<Database>(url, key, {
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
@@ -61,12 +60,13 @@ export interface AnalysisReport {
 }
 
 export const generateAnalysis = createServerFn({ method: "POST" })
-  .inputValidator((data: { contextId: string }) => {
+  .inputValidator((data: { contextId: string; accessToken: string }) => {
     if (!data?.contextId) throw new Error("contextId required");
-    return { contextId: data.contextId };
+    if (!data?.accessToken) throw new Error("Not authenticated");
+    return { contextId: data.contextId, accessToken: data.accessToken };
   })
   .handler(async ({ data }) => {
-    const sb = getSupabase();
+    const sb = getUserSupabase(data.accessToken);
     const [{ data: ctx, error: ctxErr }, { data: qs, error: qErr }, { data: rs, error: rErr }] =
       await Promise.all([
         sb
