@@ -38,6 +38,7 @@ export function startAnalysis(contextId: string): Promise<AnalysisReport> {
   const promise = (async () => {
     try {
       const res = await generateAnalysis({ data: { contextId } });
+      if (!res.analysis) throw new Error(res.error ?? "Analysis failed");
       return res.analysis;
     } finally {
       jobs.delete(contextId);
