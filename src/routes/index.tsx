@@ -301,10 +301,7 @@ function SiteFooter() {
         </span>
         <div className="flex items-center gap-4 text-xs text-sys-muted">
           <Link to="/login" className="hover:text-sys-text">
-            Log in
-          </Link>
-          <Link to="/register" className="hover:text-sys-text">
-            Sign up
+            Go to App
           </Link>
         </div>
       </div>
