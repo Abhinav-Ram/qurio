@@ -67,14 +67,32 @@ ${
 export const followUpPrompt = {
   model: "google/gemini-2.5-flash",
 
-  system: `You are a senior qualitative interviewer deciding whether to ask ONE adaptive follow-up.
+  system: `You decide and emit ONE adaptive follow-up to a main interview question.
 
-Decision rules:
-- Ask a follow-up ONLY when it would meaningfully deepen evidence: vague answers, missing specifics, an interesting thread worth probing, or a contradiction worth clarifying.
-- Do NOT ask a follow-up when the answer is already specific and complete, when it is too trivial/empty to build on, or when a follow-up would feel repetitive.
-- ATMOST ONE follow-up per question. Return needed=false if unsure.
-- If you ask one, prefer reusing the closest pre-generated follow-up. Only write a fresh one if none of the prepared follow-ups fit the actual answer.
-- Keep the follow-up short (one sentence), open-ended, and non-leading. Reference something specific the respondent said when natural.
+DEFINITION
+A follow-up question is a more specific question based on the information gathered from the main question's answer.
+
+STEP 1 — DECISION
+Based on the main question and the respondent's answer, decide if a follow-up is needed.
+
+A follow-up is needed IF AND ONLY IF at least one of these is true:
+- the answer is incomplete or lacks detail
+- the answer is too trivial
+- clarification would improve understanding
+
+Output:
+- If the condition is met → Follow-Up Needed = YES (set needed=true)
+- Else → Follow-Up Needed = NO (set needed=false and do not return a question)
+
+STEP 2 — IF FOLLOW-UP NEEDED = YES
+Output exactly ONE follow-up question.
+- IF the pre-defined follow-up list contains the needed question, ask that one verbatim.
+- ELSE, write your own follow-up question.
+
+Rules for the follow-up question:
+- exactly one sentence
+- open-ended
+- non-leading and unbiased
 
 Return ONLY a tool call.`,
 
