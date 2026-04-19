@@ -89,7 +89,11 @@ export const generateAnalysis = createServerFn({ method: "POST" })
     if (qErr) throw new Error(qErr.message);
     if (rErr) throw new Error(rErr.message);
     if (!ctx) throw new Error("Context not found");
-    if (!rs || rs.length === 0) throw new Error("No responses to analyze yet.");
+    if (!rs || rs.length === 0) {
+      // Expected, non-fatal case — return a soft error so the dev overlay
+      // doesn't treat it as a runtime crash. Caller surfaces a toast.
+      return { analysis: null as AnalysisReport | null, error: "No responses to analyze yet." };
+    }
 
     const qMap = new Map<string, string>();
     (qs ?? []).forEach((q) => qMap.set(q.id, q.text));
