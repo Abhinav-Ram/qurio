@@ -67,7 +67,14 @@ function SiteHeader() {
             Evidence-backed reasoning
           </span>
         </Link>
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-1 sm:gap-2">
+          <Link
+            to="/pricing"
+            className="rounded-md px-3 py-1.5 text-sm text-sys-text hover:text-sys-cyan"
+            activeProps={{ className: "text-sys-cyan" }}
+          >
+            Pricing
+          </Link>
           <Button asChild size="sm">
             <Link to="/login">
               Go to App
@@ -300,6 +307,9 @@ function SiteFooter() {
           QURIO — Evidence over intuition
         </span>
         <div className="flex items-center gap-4 text-xs text-sys-muted">
+          <Link to="/pricing" className="hover:text-sys-text">
+            Pricing
+          </Link>
           <Link to="/login" className="hover:text-sys-text">
             Go to App
           </Link>
