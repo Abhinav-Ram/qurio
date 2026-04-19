@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
   ArrowLeft,
   Edit2,
@@ -29,12 +29,16 @@ import {
 import { isLoggedIn } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  generateQuestionsForContext,
   updateQuestion,
   ensureShareSlug,
 } from "@/server/questions.functions";
 import type { AnalysisReport } from "@/server/analysis.functions";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
+import {
+  isQuestionsRunning,
+  startQuestions,
+  subscribeQuestions,
+} from "@/lib/questions-jobs";
 
 export const Route = createFileRoute("/contexts/$id")({
   beforeLoad: () => {
@@ -78,7 +82,11 @@ function ContextWorkspace() {
   const [ctx, setCtx] = useState<ContextRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
-  const [generating, setGenerating] = useState(false);
+  const generating = useSyncExternalStore(
+    (cb) => subscribeQuestions(id, cb),
+    () => isQuestionsRunning(id),
+    () => false,
+  );
   const [shareOpen, setShareOpen] = useState(false);
   const [shareSlug, setShareSlug] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
@@ -158,6 +166,26 @@ function ContextWorkspace() {
     };
   }, [tab, ctx]);
 
+  // If a question-generation job is already running when we mount (e.g. user
+  // navigated away and back), attach to it so we still receive results.
+  useEffect(() => {
+    if (!ctx || !isQuestionsRunning(ctx.id)) return;
+    let active = true;
+    // Re-attach by calling start with a placeholder token — it returns the
+    // existing in-flight promise without starting a new one.
+    startQuestions(ctx.id, "")
+      .then((qs) => {
+        if (!active) return;
+        setQuestions(qs);
+      })
+      .catch(() => {
+        /* error already toasted by initiator */
+      });
+    return () => {
+      active = false;
+    };
+  }, [ctx]);
+
   // Auto-generate if redirected here with ?autogen=1 and no questions yet
   useEffect(() => {
     if (loading || generating) return;
@@ -171,25 +199,15 @@ function ContextWorkspace() {
 
   async function runGenerate() {
     if (!ctx) return;
-    setGenerating(true);
     try {
       const { data: sess } = await supabase.auth.getSession();
       const accessToken = sess.session?.access_token;
       if (!accessToken) throw new Error("Not authenticated");
-      const res = await generateQuestionsForContext({
-        data: { contextId: ctx.id, accessToken },
-      });
-      setQuestions(
-        (res.questions as QuestionRow[]).map((r) => ({
-          ...r,
-          follow_ups: Array.isArray(r.follow_ups) ? (r.follow_ups as string[]) : [],
-        })),
-      );
-      toast.success(`Generated ${res.questions.length} questions`);
+      const qs = await startQuestions(ctx.id, accessToken);
+      setQuestions(qs);
+      toast.success(`Generated ${qs.length} questions`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Generation failed");
-    } finally {
-      setGenerating(false);
     }
   }
 
@@ -323,6 +341,9 @@ function ContextWorkspace() {
                 <Loader2 className="size-6 mx-auto animate-spin text-sys-cyan mb-3" />
                 <p className="text-sm text-sys-muted font-mono uppercase tracking-widest">
                   Drafting probe sequence…
+                </p>
+                <p className="text-xs text-sys-muted mt-2">
+                  This can take 10–30 seconds. You can switch tabs — it keeps running.
                 </p>
               </div>
             ) : questions.length === 0 ? (
