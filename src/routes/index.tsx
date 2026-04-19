@@ -68,12 +68,9 @@ function SiteHeader() {
           </span>
         </Link>
         <nav className="flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/login">Log in</Link>
-          </Button>
           <Button asChild size="sm">
-            <Link to="/register">
-              Sign up
+            <Link to="/login">
+              Go to App
               <ArrowRight className="size-4" />
             </Link>
           </Button>
@@ -116,13 +113,10 @@ function Hero() {
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Button asChild size="lg">
-              <Link to="/register">
-                Get started
+              <Link to="/login">
+                Go to App
                 <ArrowRight className="size-4" />
               </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link to="/login">I already have an account</Link>
             </Button>
           </div>
         </div>
@@ -267,13 +261,10 @@ function FinalCta() {
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="lg">
-            <Link to="/register">
-              Create your account
+            <Link to="/login">
+              Go to App
               <ArrowRight className="size-4" />
             </Link>
-          </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link to="/login">Log in</Link>
           </Button>
         </div>
       </div>
@@ -310,10 +301,7 @@ function SiteFooter() {
         </span>
         <div className="flex items-center gap-4 text-xs text-sys-muted">
           <Link to="/login" className="hover:text-sys-text">
-            Log in
-          </Link>
-          <Link to="/register" className="hover:text-sys-text">
-            Sign up
+            Go to App
           </Link>
         </div>
       </div>
