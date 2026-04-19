@@ -46,7 +46,7 @@ export const Route = createFileRoute("/contexts/$id")({
   },
   component: ContextWorkspace,
   head: () => ({
-    meta: [{ title: "Interview workspace — Interview Intelligence" }],
+    meta: [{ title: "Interview workspace — QURIO" }],
   }),
 });
 

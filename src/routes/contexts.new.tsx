@@ -16,7 +16,7 @@ export const Route = createFileRoute("/contexts/new")({
   },
   component: NewContextPage,
   head: () => ({
-    meta: [{ title: "New context — Interview Intelligence" }],
+    meta: [{ title: "New context — QURIO" }],
   }),
 });
 

@@ -46,7 +46,7 @@ export function SystemHeader({ status }: Props) {
     <header className="flex items-center justify-between border-b border-sys-grid pb-3 font-mono shrink-0">
       <div className="flex items-center gap-4">
         <div className="bg-sys-cyan text-sys-bg font-semibold px-2 py-0.5 text-xs tracking-widest uppercase">
-          Interview.Intel
+          QURIO
         </div>
         <div className="text-sys-muted text-xs sm:text-sm">
           OP: <span className="text-sys-text">{sessionId}</span> //{" "}
