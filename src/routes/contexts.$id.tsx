@@ -166,6 +166,26 @@ function ContextWorkspace() {
     };
   }, [tab, ctx]);
 
+  // If a question-generation job is already running when we mount (e.g. user
+  // navigated away and back), attach to it so we still receive results.
+  useEffect(() => {
+    if (!ctx || !isQuestionsRunning(ctx.id)) return;
+    let active = true;
+    // Re-attach by calling start with a placeholder token — it returns the
+    // existing in-flight promise without starting a new one.
+    startQuestions(ctx.id, "")
+      .then((qs) => {
+        if (!active) return;
+        setQuestions(qs);
+      })
+      .catch(() => {
+        /* error already toasted by initiator */
+      });
+    return () => {
+      active = false;
+    };
+  }, [ctx]);
+
   // Auto-generate if redirected here with ?autogen=1 and no questions yet
   useEffect(() => {
     if (loading || generating) return;
