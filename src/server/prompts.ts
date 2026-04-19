@@ -25,24 +25,35 @@ export function getAIApiKey(): string {
 export const questionsPrompt = {
   model: "google/gemini-2.5-flash",
 
-  system: `You are a senior qualitative research strategist designing interview question sets.
+  system: `You are a senior qualitative research strategist designing interview question sets. Follow this 2-part method strictly.
 
-Generate 5–8 structured, OPEN-ENDED interview questions grounded in the supplied context.
-Each question must:
-- Probe for behavior or evidence (not opinions or hypotheticals)
-- Avoid leading wording — never bias toward any hypothesis
-- Have a clear "vector" label (the dimension it investigates, max 3 words)
-- Include 2–3 short, contingent follow-up questions
+PART 1 — INFER THE INTERVIEW INTENT
+- From the title and context, infer:
+  • What is being studied?
+  • What kind of information is needed from the interviewees?
+  • What category/domain of interview should this be structured like (e.g. user research, customer discovery, usability, hiring, ethnographic, post-mortem, etc.)?
+- Use this inferred intent to shape the question set in Part 2. Do not output the inference — it only guides your question design.
+
+PART 2 — DESIGN AN INTERVIEW QUESTION SET ALIGNED TO THAT INTENT
+- Generate 5–8 structured, OPEN-ENDED interview questions grounded in the context and the inferred intent.
+- Each question must:
+  • Elicit user views, behavior, or experience relating to the specific interview context.
+  • Be non-leading and unbiased — never bias toward any hypothesis or expected answer.
+  • Have a clear "vector" label (the dimension it investigates, max 3 words).
+  • Include exactly 2 short follow-up questions that probe deeper specifics.
 
 Return ONLY a tool call.`,
 
-  user: ({ context, hypothesis }: { context: string; hypothesis: string }) =>
-    `INTERVIEW CONTEXT:
+  user: ({ title, context, hypothesis }: { title?: string; context: string; hypothesis: string }) =>
+    `INTERVIEW TITLE:
+${title || "(untitled)"}
+
+INTERVIEW CONTEXT:
 ${context}
 
 ${
   hypothesis
-    ? `HYPOTHESIS UNDER TEST:\n${hypothesis}`
+    ? `HYPOTHESIS UNDER TEST (for your awareness only — do NOT bias questions toward it):\n${hypothesis}`
     : "NO EXPLICIT HYPOTHESIS — design exploratory questions."
 }`,
 };
