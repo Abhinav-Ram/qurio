@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { isLoggedIn } from "@/lib/auth";
-import { resetPasswordByUsername, checkUsernameExists } from "@/server/auth.functions";
+import { resetPasswordByUsername, checkUsernameExists } from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/forgot-password")({
   beforeLoad: () => {
