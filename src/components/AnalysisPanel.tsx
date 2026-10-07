@@ -4,7 +4,7 @@ import remarkGfm from "remark-gfm";
 import { Sparkles, Loader2, RefreshCw, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import type { AnalysisReport } from "@/server/analysis.functions";
+import type { AnalysisReport } from "@/lib/analysis.functions";
 import { analysisReportToMarkdown } from "@/lib/analysis-format";
 import { supabase } from "@/integrations/supabase/client";
 import {

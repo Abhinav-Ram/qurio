@@ -11,7 +11,7 @@ import {
   getInterviewBySlug,
   submitInterviewResponse,
   type PublicInterview,
-} from "@/server/responses.functions";
+} from "@/lib/responses.functions";
 
 export const Route = createFileRoute("/i/$slug")({
   component: InterviewForm,

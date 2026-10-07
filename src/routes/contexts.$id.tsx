@@ -31,8 +31,8 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   updateQuestion,
   ensureShareSlug,
-} from "@/server/questions.functions";
-import type { AnalysisReport } from "@/server/analysis.functions";
+} from "@/lib/questions.functions";
+import type { AnalysisReport } from "@/lib/analysis.functions";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
 import {
   isQuestionsRunning,

@@ -1,4 +1,4 @@
-import type { AnalysisReport } from "@/server/analysis.functions";
+import type { AnalysisReport } from "@/lib/analysis.functions";
 
 const TYPE_LABEL: Record<string, string> = {
   pain_point: "Pain point",
