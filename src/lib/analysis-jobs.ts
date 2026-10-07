@@ -1,5 +1,5 @@
-import type { AnalysisReport } from "@/server/analysis.functions";
-import { generateAnalysis } from "@/server/analysis.functions";
+import type { AnalysisReport } from "@/lib/analysis.functions";
+import { generateAnalysis } from "@/lib/analysis.functions";
 
 type JobState = {
   promise: Promise<AnalysisReport>;

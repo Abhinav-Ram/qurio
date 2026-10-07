@@ -1,4 +1,4 @@
-import { generateQuestionsForContext } from "@/server/questions.functions";
+import { generateQuestionsForContext } from "@/lib/questions.functions";
 
 export type GeneratedQuestion = {
   id: string;

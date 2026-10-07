@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { followUpPrompt, AI_GATEWAY_URL, getAIApiKey } from "./prompts";
+import { followUpPrompt, AI_GATEWAY_URL, getAIApiKey } from "./prompts.server";
 
 function getSupabase() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
